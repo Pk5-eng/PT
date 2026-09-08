@@ -138,17 +138,51 @@ member with zero load.
   `Setting out plan?????????`, `BATHROOM GF'S`. Renaming a substage or deliverable is
   safe at any time (spec 4, rule 3), so these can be fixed in Settings after launch.
 
-## Open questions
+## Decisions taken in the Phase 0 review
 
-Blocking Phase 1. Everything else is resolved and encoded in the `DECISIONS` block at
-the top of `scripts/seed.mjs`.
+All five open questions are closed. Each is encoded in exactly one place, the
+`DECISIONS` block at the top of `scripts/seed.mjs`, and nowhere else.
 
-1. **B2** — are the two `GFC-ID / MATERIAL SELECTION` rows one substage repeated in the
-   spreadsheet, or two genuinely different selection rounds? If two, they need distinct
-   names. Current default: collapse to one.
-2. **B4** — are the four dated, uncoloured cells finished work someone forgot to colour,
-   or a target date for work still running? Current default: still running, date dropped.
-3. **B6** — are the seven status-null projects enquiries rather than live jobs?
-   Current default: `not_confirmed`.
-4. **D4** — redefine the priority scale or drop the column?
-5. **D5** — re-extract codes from the xlsx, or drop `code` and `site_location`?
+| | Question | Decision |
+|---|---|---|
+| B2 | One `MATERIAL SELECTION` repeated, or two rounds? | **Two rounds.** Both load, renamed so project rows can reference them |
+| B4 | Bare dates: finished, or a target? | **A target.** New `target_date` column, migration 0004 |
+| B6 | Seven null-status projects: enquiries or live? | **Live**, never filled in. They take the `ongoing` default |
+| D4 | Priority: drop or redefine? | **Keep and re-rank in the app.** Loaded as-is, nulls included |
+| D5 | Codes and site location | Not decoded, columns ship empty. Re-extract from the xlsx later |
+
+### B2 in detail
+
+The two rounds are seeded as `MATERIAL SELECTION - ROUND 1` (seq 17) and
+`MATERIAL SELECTION - ROUND 2` (seq 20). Those names are **positional placeholders, not
+studio vocabulary** — they should be renamed in Settings to whatever the studio actually
+calls the two rounds. Renaming a substage is safe at any time and needs no warning
+(spec section 4, rule 3); nothing downstream depends on the text.
+
+Five projects reference the name. Four reference it twice and take the two rounds in
+sheet order; `Vinay Kothari` references it once and takes round 1. In all four
+double-referencing projects both mentions carry the same status, so the ordering cannot
+produce a wrong result. `Kuldeep Garg`'s `MATERIAL SELECTION` is in `GFC - ARCHITECTURE`,
+is unique within that group, and is not renamed.
+
+### B4 in detail
+
+Migration `0004_target_date.sql` adds `project_substage.target_date` and rebuilds
+`v_board` to expose it as `days_past_target`. Five rows carry a date.
+
+`target_date` is deliberately outside the trigger's control. It is the one date a user
+may author, because it is a plan rather than a record of what happened; `started_on` and
+`concluded_on` remain stamped and unauthorable per CLAUDE.md rule 2.
+
+This partly answers D1. No row has `started_on`, so `days_over` is null for all 37
+projects and the board's primary sort key is empty on day one. `days_past_target` gives
+the board a second, independent signal that has real data behind it from the start —
+five projects, four of them already past their target as of this writing.
+
+## Still true after the review
+
+D1 (no start dates), D2 (13 substages with no planned weeks), D3 (20 projects with no
+stage data), D6 (Mukesh / Muskesh Gala), D7 (seven stage groups, not eight) and D8
+(Vanisree unassigned) are unchanged. None blocks Phase 1. D1 and D2 together mean the
+board's overrun column stays thin until the app has been in use for a few weeks, which
+is inherent to replacing a system that never recorded start dates.

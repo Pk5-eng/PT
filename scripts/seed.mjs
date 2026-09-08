@@ -41,39 +41,46 @@ const ROLE_CODE_MAP = {
 };
 
 /**
- * B4. Four rows are a date with no colour. The schema has no such status.
- * A date on a row that is not done reads as a target, not a conclusion -
- * Anup Embassy Springs has one on an explicitly in_process row too.
+ * B4. Four rows are a date with no colour, and one in_process row carries a
+ * date too. Resolved in the Phase 0 review: a date on a not-done row is when
+ * the work is expected to conclude, not when it did.
+ *
+ * The status becomes in_process and the date moves to project_substage.
+ * target_date, added by migration 0004. It is NOT left in concluded_on:
+ * stamp_and_log() nulls concluded_on on any status change away from 'done', so
+ * the first dropdown change would have erased it without telling anyone.
  */
 const UNKNOWN_STATUS_BECOMES = 'in_process';
-
-/**
- * B4 continued. stamp_and_log() nulls concluded_on on any status change away
- * from 'done'. Seeding a date onto a non-done row therefore stores a value the
- * first dropdown change silently erases. Better to not store it than to store
- * something that disappears without anyone being told.
- */
-const DROP_CONCLUDED_ON_WHEN_NOT_DONE = true;
+const CONCLUDED_ON_WHEN_NOT_DONE = 'target_date';   // 'target_date' | 'drop'
 
 /** B5. One row is in_process with the note "HOLD". The schema has a hold status. */
 const NOTE_TO_STATUS = { HOLD: 'hold' };
 
 /**
- * B6. Seven projects have status null, priority null and no substages - a
- * separate tranche in the sheet. The column default is 'ongoing', which would
- * put seven enquiries on the live board. Set to null to use the column default.
+ * B6. Seven projects have status null, priority null and no substages.
+ * Resolved in the Phase 0 review: live work that was never filled in, so they
+ * take the column default and appear on the board like any other live project.
  */
-const NULL_PROJECT_STATUS_BECOMES = 'not_confirmed';
+const NULL_PROJECT_STATUS_BECOMES = 'ongoing';
 
 /**
  * B2. "MATERIAL SELECTION" appears twice inside GFC-ID (seq 17 and seq 20).
- * Project rows name substages by (group, name) and cannot tell them apart.
+ * Resolved in the Phase 0 review: two genuinely different selection rounds,
+ * one either side of services coordination. So both load, and they are given
+ * distinct names here because project rows reference substages by
+ * (group, name) and could otherwise not tell them apart.
  *
- *   'collapse' - treat seq 20 as a repeated spreadsheet row, load one substage
- *   'keep'     - load both; every project referencing it takes the lower seq
- *                and the second stays unreferenced until someone renames it
+ * The names below are positional placeholders, not studio vocabulary. Renaming
+ * a substage is safe at any time and needs no warning (spec section 4, rule 3),
+ * so these should be changed in Settings to whatever the studio calls the two
+ * rounds. Nothing downstream depends on the text.
+ *
+ * Each project that references the name twice takes them in order: first
+ * occurrence to the lower seq, second to the higher. In all four such projects
+ * both occurrences carry the same status, so the order cannot be got wrong.
  */
-const DUPLICATE_SUBSTAGE_POLICY = 'collapse';
+const DUPLICATE_SUBSTAGE_POLICY = 'keep';
+const DUPLICATE_SUBSTAGE_SUFFIX = (n) => ` - ROUND ${n}`;
 
 /**
  * D6. "Mukesh Gala" (sl 25) and "Muskesh Gala" (sl 34) are probably one client.
@@ -81,6 +88,13 @@ const DUPLICATE_SUBSTAGE_POLICY = 'collapse';
  * the merge stays a decision someone makes in the app.
  */
 const MERGE_NEAR_DUPLICATE_PROJECTS = false;
+
+/**
+ * D4. priority = 3 on 25 of 37 projects. Resolved in the Phase 0 review: keep
+ * the column and re-rank inside the app. Loaded exactly as the sheet has it,
+ * nulls included. Until it is re-ranked the field carries no signal and nothing
+ * should sort by it.
+ */
 
 /**
  * D2. Nothing in the sheet records when work started. started_on is left null.
@@ -122,35 +136,47 @@ const numericWeeks = (v) => {
   return null;          // B3: the string "NA"
 };
 
-// Substages, with the duplicate-inside-one-group problem resolved here.
+// Substages. A (group, name) pair that repeats inside one stage group is kept
+// as two rows and renamed so it can be referenced unambiguously.
+const dupNames = new Map();
+for (const s of seed.substages) {
+  const k = `${s.group} :: ${s.name}`;
+  dupNames.set(k, (dupNames.get(k) ?? 0) + 1);
+}
+
 const substages = [];
-const substageKey = new Map();      // "GROUP :: NAME" -> index into substages
-const collapsed = [];
+const byKey = new Map();      // "GROUP :: SHEET NAME" -> [index, ...] in sheet order
+const renamed = [];
+const ordinal = new Map();
 for (const s of seed.substages) {
   const key = `${s.group} :: ${s.name}`;
-  if (substageKey.has(key)) {
-    if (DUPLICATE_SUBSTAGE_POLICY === 'collapse') {
-      collapsed.push(`${key} (seq ${s.seq}) collapsed into seq ${substages[substageKey.get(key)].seq}`);
-      continue;
-    }
-    warn(`${key} loaded twice; project rows will all resolve to the lower seq`);
-  } else {
-    substageKey.set(key, substages.length);
+  const isDup = dupNames.get(key) > 1;
+  let name = s.name;
+  if (isDup) {
+    const n = (ordinal.get(key) ?? 0) + 1;
+    ordinal.set(key, n);
+    name = s.name + DUPLICATE_SUBSTAGE_SUFFIX(n);
+    renamed.push(`${key} (seq ${s.seq}) -> "${name}"`);
   }
+  if (!byKey.has(key)) byKey.set(key, []);
+  byKey.get(key).push(substages.length);
   substages.push({
     group: s.group,
-    name: s.name,
+    name,
     seq: s.seq,
     planned_weeks: numericWeeks(s.planned_weeks),
     active: true,
-    deliverables: s.deliverables.map((name, i) => ({ name, seq: i, active: true })),
+    deliverables: s.deliverables.map((n2, i) => ({ name: n2, seq: i, active: true })),
   });
 }
+const substageIdKey = (i) => `${substages[i].group} :: ${substages[i].name}`;
 
 const projects = [];
 const assignments = [];
 const projectSubstages = [];
 const skippedAssignments = [];
+const resolved = [];
+const retargeted = [];
 
 for (const p of seed.projects) {
   const status = p.status ? p.status.toLowerCase() : NULL_PROJECT_STATUS_BECOMES;
@@ -173,15 +199,21 @@ for (const p of seed.projects) {
     assignments.push({ project: key, person, role_code, raw });
   }
 
-  const seen = new Set();
+  const occurrence = new Map();
   for (const r of p.substages) {
-    const sKey = `${r.group} :: ${r.substage}`;
-    if (!substageKey.has(sKey)) { warn(`${p.name} references unknown substage ${sKey}; skipped`); continue; }
-    if (seen.has(sKey)) {
-      warn(`${p.name} references ${sKey} twice; second occurrence dropped (unique constraint)`);
+    const sheetKey = `${r.group} :: ${r.substage}`;
+    const candidates = byKey.get(sheetKey);
+    if (!candidates) { warn(`${p.name} references unknown substage ${sheetKey}; skipped`); continue; }
+
+    // nth mention of a repeated name takes the nth substage, in sheet order
+    const n = occurrence.get(sheetKey) ?? 0;
+    occurrence.set(sheetKey, n + 1);
+    if (n >= candidates.length) {
+      warn(`${p.name} references ${sheetKey} ${n + 1} times but only ${candidates.length} exist; dropped`);
       continue;
     }
-    seen.add(sKey);
+    const target = substageIdKey(candidates[n]);
+    if (candidates.length > 1) resolved.push(`${p.name}: mention ${n + 1} of ${sheetKey} -> "${substages[candidates[n]].name}"`);
 
     let status = r.status;
     if (status === 'unknown') status = UNKNOWN_STATUS_BECOMES;
@@ -189,17 +221,24 @@ for (const p of seed.projects) {
     else if (r.note) warn(`${p.name} / ${r.substage}: note ${JSON.stringify(r.note)} has nowhere to go and is dropped`);
 
     let concluded_on = r.concluded_on;
-    if (concluded_on && status !== 'done' && DROP_CONCLUDED_ON_WHEN_NOT_DONE) {
-      warn(`${p.name} / ${r.substage}: concluded_on ${concluded_on} dropped, status is '${status}' not 'done'`);
+    let target_date = null;
+    if (concluded_on && status !== 'done') {
+      if (CONCLUDED_ON_WHEN_NOT_DONE === 'target_date') {
+        target_date = concluded_on;
+        retargeted.push(`${p.name} / ${r.substage}: ${concluded_on} -> target_date (status '${status}')`);
+      } else {
+        warn(`${p.name} / ${r.substage}: concluded_on ${concluded_on} dropped, status is '${status}'`);
+      }
       concluded_on = null;
     }
 
     projectSubstages.push({
       project: key,
-      substage: sKey,
+      substage: target,
       status,
       started_on: null,   // D2: never invented
       concluded_on,
+      target_date,
     });
   }
 }
@@ -217,9 +256,15 @@ load(projects.length, 'projects');
 load(assignments.length, 'assignments');
 load(projectSubstages.length, 'project_substage');
 
-if (collapsed.length) {
-  console.log('\nduplicate substages collapsed');
-  for (const c of collapsed) console.log(`  ${c}`);
+if (renamed.length) {
+  console.log('\nrepeated substage names, renamed so they can be referenced');
+  for (const r of renamed) console.log(`  ${r}`);
+  for (const r of resolved) console.log(`  ${r}`);
+  console.log('  (positional placeholders - rename in Settings, it is safe at any time)');
+}
+if (retargeted.length) {
+  console.log('\ndates moved to target_date (a date on a not-done row is a plan, not a record)');
+  for (const r of retargeted) console.log(`  ${r}`);
 }
 if (skippedAssignments.length) {
   console.log('\nassignments skipped');
@@ -251,7 +296,8 @@ for (const r of projectSubstages) statusCounts.set(r.status, (statusCounts.get(r
 console.log('\nproject_substage status distribution');
 for (const [s, n] of [...statusCounts.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${s.padEnd(12)} ${n}`);
 console.log(`\nprojects with no substage rows: ${projects.length - new Set(projectSubstages.map((r) => r.project)).size}`);
-console.log(`rows with started_on:           ${projectSubstages.filter((r) => r.started_on).length}  (board duration columns stay blank until the app is used)`);
+console.log(`rows with started_on:           ${projectSubstages.filter((r) => r.started_on).length}  (days_over stays blank until the app is used)`);
+console.log(`rows with target_date:          ${projectSubstages.filter((r) => r.target_date).length}  (gives the board a signal on day one)`);
 
 if (DRY) {
   console.log('\ndry run complete, nothing written.\n');
@@ -314,9 +360,18 @@ await insert('assignments', assignments.map((a) => ({
   project_id: projId.get(a.project), person_id: peopleId.get(a.person), role_code: a.role_code,
 })));
 
+const unresolved = projectSubstages.filter((r) => !subId.has(r.substage));
+if (unresolved.length) {
+  throw new Error(
+    `${unresolved.length} project_substage rows do not resolve to a substage: ` +
+    [...new Set(unresolved.map((r) => r.substage))].join(', ')
+  );
+}
+
 await insert('project_substage', projectSubstages.map((r) => ({
   project_id: projId.get(r.project), substage_id: subId.get(r.substage),
   status: r.status, started_on: r.started_on, concluded_on: r.concluded_on,
+  target_date: r.target_date,
 })));
 
 console.log('done.\n');

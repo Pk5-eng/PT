@@ -24,8 +24,8 @@ boundary.
 | 5 | Blocks, team load, derived metrics | not started |
 | 6 | Auth, RLS and PWA install | RLS written, not applied |
 
-Phase 1 is blocked on five decisions listed at the end of `docs/PHASE0_AUDIT.md`, and on
-Supabase credentials. Nothing has been written to any database.
+The five Phase 0 decisions are closed and recorded in `docs/PHASE0_AUDIT.md`. Phase 1 is
+blocked only on Supabase credentials. Nothing has been written to any database.
 
 ## Commands
 
@@ -47,6 +47,8 @@ numbers (Madhu = 14 non-INVOLVED assignments, Selva = 7). Treat it as a test.
    - `supabase/migrations/0001_schema.sql` — tables and indexes
    - `supabase/migrations/0002_trigger_and_view.sql` — the stamping trigger and `v_board`
    - `supabase/migrations/0003_rls.sql` — Row Level Security
+   - `supabase/migrations/0004_target_date.sql` — `target_date` column, agreed in the
+     Phase 0 review, and the board view rebuilt to expose it
 3. `cp .env.example .env` and fill in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 4. `npm run seed:dry`, read the warnings, then `npm run seed`.
 5. Verify in the SQL editor:
