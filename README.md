@@ -45,19 +45,16 @@ numbers (Madhu = 14 non-INVOLVED assignments, Selva = 7). Treat it as a test.
 
 ## Applying Phase 1
 
-1. Create a Supabase project (free tier).
-2. Run the migrations in order, in the SQL editor:
-   - `supabase/migrations/0001_schema.sql` — tables and indexes
-   - `supabase/migrations/0002_trigger_and_view.sql` — the stamping trigger and `v_board`
-   - `supabase/migrations/0003_rls.sql` — Row Level Security
-   - `supabase/migrations/0004_target_date.sql` — `target_date` column, agreed in the
-     Phase 0 review, and the board view rebuilt to expose it
-3. Paste `supabase/seed.sql` into the SQL editor and run it. That is the whole seed —
-   no Node, no service role key, no network access needed.
+Two pastes into the Supabase SQL editor. That is the whole thing — no Node, no service
+role key, no terminal.
 
-   (Alternative: `cp .env.example .env`, fill in `SUPABASE_URL` and
-   `SUPABASE_SERVICE_ROLE_KEY`, then `npm run seed:dry` followed by `npm run seed`.)
-4. Verify in the SQL editor:
+1. Create a Supabase project (free tier).
+2. Open **SQL Editor** → new query. Paste the *contents* of
+   [`supabase/ALL_MIGRATIONS.sql`](supabase/ALL_MIGRATIONS.sql) and Run.
+   That is migrations 0001–0004 in order: schema, trigger and board view, Row Level
+   Security, and the `target_date` column.
+3. New query. Paste the *contents* of [`supabase/seed.sql`](supabase/seed.sql) and Run.
+4. New query. Verify:
 
 ```sql
 select p.name, count(*) as active_assignments
@@ -70,8 +67,21 @@ order by active_assignments desc;
 
 Madhu must return 14.
 
-Apply RLS (`0003`) before putting real data behind a public URL, not at Phase 6. Until
-those policies exist the anon key reads and writes everything.
+To get the file contents: open the file on GitHub, click **Raw**, select all, copy.
+`seed.sql` is ~48 KB and pastes fine.
+
+Both files are generated. After changing a migration run `npm run build:migrations`;
+after changing `seed.json` or the decisions in `scripts/seed.mjs` run `npm run seed:sql`.
+
+RLS is applied in step 2, not deferred to Phase 6 as the spec sequences it. Until those
+policies exist the anon key reads and writes everything, and Phase 2 puts a public URL in
+front of this database.
+
+### If you prefer the network path
+
+`cp .env.example .env`, fill in `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, then
+`npm run seed:dry` followed by `npm run seed`. Same result; the SQL editor route just
+needs less setup.
 
 ## Verifying before you touch Supabase
 

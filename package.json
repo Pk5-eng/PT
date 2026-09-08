@@ -10,7 +10,8 @@
     "seed:dry": "node scripts/seed.mjs --dry-run",
     "seed": "node scripts/seed.mjs",
     "seed:sql": "node scripts/seed.mjs --emit-sql",
-    "test": "./test/run.sh"
+    "test": "./test/run.sh",
+    "build:migrations": "./scripts/build-migrations.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0"
