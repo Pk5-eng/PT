@@ -16,8 +16,12 @@ between other tasks, not people who will learn a tool.
 
 ## Constraints
 
-- **Zero operating cost.** Cloudflare Pages (free, commercial use permitted) plus Supabase free
-  tier. Vercel Hobby is not an option, it forbids commercial use.
+- **Zero operating cost.** Vercel Hobby plus Supabase free tier.
+
+  The spec rules Vercel out because its Hobby tier forbids commercial use. That does not
+  apply here: the owner has confirmed this is a personal tool for his own use only, which is
+  exactly what Hobby is licensed for. Decided; do not raise it again. Cloudflare Pages remains
+  a drop-in alternative if the tool is ever used by the practice rather than by one person.
 - **No backend server.** The browser talks to Supabase directly. Row Level Security is the
   authorisation layer. Never introduce an API server, a queue, a cron job, or anything that must
   stay running.

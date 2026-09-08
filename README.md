@@ -127,8 +127,13 @@ service role key belongs only in seeding, never in the app.
 
 The build is a static Vite bundle: `npm run build`, output in `dist/`.
 
-**Cloudflare Pages** (free, commercial use permitted — the host this project is specified
-for): connect the repo, build command `npm run build`, output directory `dist`.
+**Vercel**, on the Hobby tier. `vercel.json` sets the framework, build command, output
+directory and the SPA rewrite, so a connected repo needs no dashboard configuration beyond
+the two environment variables below. Pushing to the branch triggers a build.
+
+Hobby is licensed for personal, non-commercial use, which is what this is. If the tool ever
+becomes something the practice uses rather than one person, move it to Cloudflare Pages —
+same build command, same output directory, no code changes.
 
 Whichever host you use, set both environment variables on it:
 
@@ -141,6 +146,3 @@ Vite inlines these at build time, so **adding them requires a redeploy** — set
 a build that already ran will not take effect. If they are missing, the app says so on
 screen rather than rendering blank.
 
-> Vercel's Hobby tier is licensed for personal, non-commercial use. This is a business
-> tool for a practice, which is why `CLAUDE.md` rules it out. Noted here as a licensing
-> matter, not a technical one.
