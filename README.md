@@ -1,6 +1,6 @@
 # Kabra Architects Project Dashboard
 
-Installable PWA replacing `KA_WORK_DISTRIBUTION.xlsx`, where every project's status was
+Web application replacing `KA_WORK_DISTRIBUTION.xlsx`, where every project's status was
 stored as a cell background colour. 10 people, 37 projects, Bangalore.
 
 - **Spec:** `KA_DASHBOARD_BUILD_SPEC.md`
@@ -18,11 +18,11 @@ boundary.
 |---|---|---|
 | 0 | Repo and seed audit | **done** — `docs/PHASE0_AUDIT.md` |
 | 1 | Schema and seed | **verified against Postgres 16, not yet applied to Supabase** — `docs/PHASE1_VERIFICATION.md` |
-| 2 | Read-only board | not started |
+| 2 | Read-only board | **built, not yet deployed** |
 | 3 | Project detail and status editing | not started |
 | 4 | New project and inline editing | not started |
 | 5 | Blocks, team load, derived metrics | not started |
-| 6 | Auth, RLS and PWA install | RLS written, not applied |
+| 6 | Auth and RLS | RLS applied. PWA install dropped by decision — see CLAUDE.md |
 
 The five Phase 0 decisions are closed and recorded in `docs/PHASE0_AUDIT.md`. The
 migrations and seed have been run end to end against a real Postgres and all tests pass
@@ -109,3 +109,38 @@ to Supabase.
   it to decide which substage a project is currently on.
 - Dependencies are fixed by spec: React, Vite, `@supabase/supabase-js`, `date-fns`,
   `vite-plugin-pwa`. Adding to that list requires asking first.
+
+
+## Running it locally
+
+```sh
+cp .env.example .env      # fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+npm install
+npm run dev
+```
+
+The anon key is public by design — it ships in the browser bundle. RLS is the boundary,
+and every policy requires a signed-in user, so the anon key alone reads nothing. The
+service role key belongs only in seeding, never in the app.
+
+## Deploying
+
+The build is a static Vite bundle: `npm run build`, output in `dist/`.
+
+**Cloudflare Pages** (free, commercial use permitted — the host this project is specified
+for): connect the repo, build command `npm run build`, output directory `dist`.
+
+Whichever host you use, set both environment variables on it:
+
+| variable | value |
+|---|---|
+| `VITE_SUPABASE_URL` | your Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | the anon / public key |
+
+Vite inlines these at build time, so **adding them requires a redeploy** — setting them on
+a build that already ran will not take effect. If they are missing, the app says so on
+screen rather than rendering blank.
+
+> Vercel's Hobby tier is licensed for personal, non-commercial use. This is a business
+> tool for a practice, which is why `CLAUDE.md` rules it out. Noted here as a licensing
+> matter, not a technical one.

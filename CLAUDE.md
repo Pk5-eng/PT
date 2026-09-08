@@ -1,15 +1,18 @@
 # Kabra Architects Project Dashboard
 
-Installable PWA for a 10-person architecture practice in Bangalore. Replaces a spreadsheet
+Web application for a 10-person architecture practice in Bangalore. Replaces a spreadsheet
 where project status was encoded as cell background colour.
 
 Full specification: `KA_DASHBOARD_BUILD_SPEC.md`. Migration data: `seed.json`.
 
 ## Users
 
-Nine studio members plus the principal. Non-technical. Most access will be on a phone, standing
-on a site or between meetings. Every interaction must survive being done one-handed in under
-thirty seconds.
+Nine studio members plus the principal. Non-technical. Primarily used at a desk, in a browser.
+It stays readable on a phone if someone opens it between meetings, but phones are not the
+design target and no install, offline or app-like behaviour is built for them.
+
+Every interaction must still survive being done in under thirty seconds. These are architects
+between other tasks, not people who will learn a tool.
 
 ## Constraints
 
@@ -18,10 +21,10 @@ thirty seconds.
 - **No backend server.** The browser talks to Supabase directly. Row Level Security is the
   authorisation layer. Never introduce an API server, a queue, a cron job, or anything that must
   stay running.
-- **PWA, not native.** Manifest plus service worker, installed from the browser. Native
-  distribution would cost 99 USD a year for Apple alone.
-- **Dependencies:** React, Vite, @supabase/supabase-js, date-fns, vite-plugin-pwa. Adding to this
-  list requires asking first.
+- **A plain website.** No PWA, no manifest, no service worker, no offline mode, no install
+  prompt. Decided after the spec was written; the spec's PWA sections are superseded.
+- **Dependencies:** React, Vite, @supabase/supabase-js, date-fns. Adding to this list requires
+  asking first. (`@vitejs/plugin-react` is the standard React/Vite glue, not a new capability.)
 
 ## Domain vocabulary
 
@@ -53,8 +56,11 @@ thirty seconds.
 - **Show the gaps.** Twenty of 37 projects have no stage data. They appear on the board as
   "Not set". Never hide an empty row.
 - **Four screens plus admin settings.** Board, Project detail, New project, Team load, Settings.
+- **The board shows the substage that is stuck, not the first one.** 10 of 17 active projects run
+  several substages at once, so a row reports the most overdue and counts the rest as "+N more".
 
 ## Explicitly out of scope
 
 Gantt charts, percent complete, time tracking, client login, file storage, notifications,
-invoicing, fee tracking. Do not add these and do not scaffold for them.
+invoicing, fee tracking, PWA install and offline support. Do not add these and do not scaffold
+for them.
