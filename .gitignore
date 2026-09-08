@@ -7,3 +7,9 @@ dev-dist/
 .DS_Store
 *.log
 .vite/
+
+# Local verification harness: renders real components against fixture data.
+# Regenerated on demand; not part of the app.
+.fixtures/
+verify.html
+vite.verify.config.js

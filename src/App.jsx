@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase, configError } from './lib/supabase.js';
 import { sortRows, summarise } from './lib/board.js';
 import Board from './components/Board.jsx';
 import SignIn from './components/SignIn.jsx';
+import ProjectDetail from './components/ProjectDetail.jsx';
+import { useRoute, toBoard } from './lib/route.js';
 
 export default function App() {
   const [session, setSession] = useState(undefined); // undefined = still checking
@@ -10,6 +12,7 @@ export default function App() {
   const [teams, setTeams] = useState({});
   const [people, setPeople] = useState([]);
   const [error, setError] = useState(null);
+  const route = useRoute();
   const [person, setPerson] = useState('');
   const [type, setType] = useState('');
 
@@ -20,39 +23,37 @@ export default function App() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  const load = useCallback(async () => {
+    // Claim this user's `people` row so the trigger can attribute their status
+    // changes. Harmless to call again on every load.
+    await supabase.rpc('link_my_identity');
+
+    const [board, assign] = await Promise.all([
+      supabase.from('v_board').select('*'),
+      supabase.from('assignments').select('project_id, role_code, people(name)'),
+    ]);
+
+    if (board.error) return setError(board.error.message);
+    if (assign.error) return setError(assign.error.message);
+    setError(null);
+
+    const byProject = {};
+    const names = new Set();
+    for (const a of assign.data) {
+      const name = a.people?.name;
+      if (!name) continue;
+      names.add(name);
+      (byProject[a.project_id] ||= []).push({ name, role: a.role_code });
+    }
+    setTeams(byProject);
+    setPeople([...names].sort());
+    setRows(board.data);
+  }, []);
+
   useEffect(() => {
     if (!session) return;
-    let cancelled = false;
-
-    (async () => {
-      // Claim this user's `people` row so the trigger can attribute their
-      // status changes. Harmless to call on every sign-in.
-      await supabase.rpc('link_my_identity');
-
-      const [board, assign] = await Promise.all([
-        supabase.from('v_board').select('*'),
-        supabase.from('assignments').select('project_id, role_code, people(name)'),
-      ]);
-      if (cancelled) return;
-
-      if (board.error) return setError(board.error.message);
-      if (assign.error) return setError(assign.error.message);
-
-      const byProject = {};
-      const names = new Set();
-      for (const a of assign.data) {
-        const name = a.people?.name;
-        if (!name) continue;
-        names.add(name);
-        (byProject[a.project_id] ||= []).push({ name, role: a.role_code });
-      }
-      setTeams(byProject);
-      setPeople([...names].sort());
-      setRows(board.data);
-    })();
-
-    return () => { cancelled = true; };
-  }, [session]);
+    load();
+  }, [session, load]);
 
   const filtered = useMemo(() => {
     if (!rows) return [];
@@ -74,6 +75,12 @@ export default function App() {
   }
   if (session === undefined) return <p className="state">Loading…</p>;
   if (!session) return <SignIn />;
+
+  // Returning to the board refetches, so a status changed on the detail screen
+  // is reflected in the row you came from.
+  if (route.name === 'project') {
+    return <ProjectDetail projectId={route.projectId} onBack={() => { toBoard(); load(); }} />;
+  }
 
   return (
     <div className="wrap">

@@ -1,4 +1,5 @@
 import { lateness, idleReason, planDays } from '../lib/board.js';
+import { toProject } from '../lib/route.js';
 
 /**
  * One row's days figure.
@@ -110,7 +111,8 @@ export default function Board({ rows, teams }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.id} className={lateness(r).late ? 'late' : undefined}>
+            <tr key={r.id} className={`clickable${lateness(r).late ? ' late' : ''}`}
+                onClick={() => toProject(r.id)}>
               <td>
                 <div className="pname">{r.name}</div>
                 <div className="pmeta">{r.type}{r.code ? ` · ${r.code}` : ''}{r.status !== 'ongoing' ? ` · ${r.status}` : ''}</div>
@@ -131,7 +133,8 @@ export default function Board({ rows, teams }) {
           const late = lateness(r);
           const plan = planDays(r);
           return (
-            <div key={r.id} className={`rowcard${late.late ? ' late' : ''}`}>
+            <div key={r.id} className={`rowcard clickable${late.late ? ' late' : ''}`}
+                 onClick={() => toProject(r.id)}>
               <div className="line1">
                 <span className="pname">{r.name}</span>
                 <span className={`days${late.late ? ' over' : ''}`}>

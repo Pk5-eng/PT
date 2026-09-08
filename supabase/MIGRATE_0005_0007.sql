@@ -1,16 +1,19 @@
 -- ============================================================================
--- INCREMENTAL: migrations 0005 and 0006 only
+-- INCREMENTAL MIGRATION: 0005, 0006, 0007
 --
--- Apply this if you have ALREADY run ALL_MIGRATIONS.sql (0001-0004), which you
--- have. Do NOT re-run ALL_MIGRATIONS.sql: 0001 would fail because the tables
--- already exist.
+-- Apply this if you have already run ALL_MIGRATIONS.sql (0001-0004).
+-- Do NOT re-run ALL_MIGRATIONS.sql - 0001 would fail on existing tables.
 --
--- 0005 rewrites v_board so a project shows its most overdue substage instead of
---      its earliest, and reports how many others are running.
--- 0006 lets a signed-in user claim their own row in people, so the trigger can
---      attribute status changes to them.
+-- SAFE TO RUN TWICE. Every statement here is idempotent, so it does not
+-- matter whether you already applied 0005 and 0006 earlier.
 --
--- Safe to run once. Each migration is its own transaction.
+--   0005  v_board shows a project's MOST OVERDUE substage instead of its
+--         earliest, and counts the others ("+6 more"). Also distinguishes a
+--         finished project from one with no stage data.
+--   0006  link_my_identity(), so a signed-in user claims their own row in
+--         people and the activity feed can say who changed what.
+--   0007  stamps project_deliverable.done_on when a deliverable is ticked,
+--         and clears it when unticked. Dates are never typed.
 -- ============================================================================
 
 
@@ -151,5 +154,40 @@ end $$ language plpgsql security definer set search_path = public;
 
 revoke all on function link_my_identity() from public, anon;
 grant execute on function link_my_identity() to authenticated;
+
+commit;
+
+-- ## 0007_deliverable_stamp.sql
+
+-- 0007_deliverable_stamp.sql
+--
+-- Stamps project_deliverable.done_on, for the same reason stamp_and_log()
+-- stamps the substage dates: rule 2, dates are never authored by a user.
+--
+-- Without this the browser would decide when a deliverable was finished, and a
+-- client clock, a stale tab or a timezone would be able to write a date the
+-- database never agreed to. Ticking the box is the whole interaction; the date
+-- is a consequence of it.
+--
+-- Unticking clears the date rather than leaving a completion date on something
+-- that is not complete.
+
+begin;
+
+create or replace function stamp_deliverable() returns trigger as $$
+begin
+  if new.done and (tg_op = 'INSERT' or not old.done) then
+    new.done_on := current_date;
+  elsif not new.done then
+    new.done_on := null;
+  end if;
+  return new;
+end $$ language plpgsql;
+
+drop trigger if exists trg_stamp_deliverable on project_deliverable;
+
+create trigger trg_stamp_deliverable
+  before insert or update on project_deliverable
+  for each row execute function stamp_deliverable();
 
 commit;
