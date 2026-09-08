@@ -177,7 +177,7 @@ may author, because it is a plan rather than a record of what happened; `started
 This partly answers D1. No row has `started_on`, so `days_over` is null for all 37
 projects and the board's primary sort key is empty on day one. `days_past_target` gives
 the board a second, independent signal that has real data behind it from the start —
-five projects, four of them already past their target as of this writing.
+five projects, and as of 8 September 2026 all five are already past their target.
 
 ## Still true after the review
 
