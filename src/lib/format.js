@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, formatDistanceToNow } from 'date-fns';
 
 /** "4 Mar" for this year, "4 Mar 2025" otherwise. Dates are read at a glance. */
 export function shortDate(iso) {
@@ -50,4 +50,14 @@ export function substageMeta(row) {
   if (plan != null) bits.push(`plan ${plan}`);
 
   return bits.length ? bits.join(', ') : 'no dates recorded';
+}
+
+/**
+ * "3 days ago". The activity feed is read to answer "is this recent?", which a
+ * relative figure answers instantly and a timestamp does not. The exact time
+ * stays available in the title attribute, so nothing is lost.
+ */
+export function relative(iso) {
+  if (!iso) return null;
+  return formatDistanceToNow(parseISO(iso), { addSuffix: true });
 }

@@ -27,8 +27,28 @@ export function idleReason(row) {
   return 'Nothing in process';
 }
 
-/** Board order: most overdue first, then everything else by name. */
-export function sortRows(rows) {
+/**
+ * Board order.
+ *
+ * 'overrun' is the default and the one the product is about: the board measures
+ * blockage, not progress, so the row that has run furthest past its plan is the
+ * row you should see first. The other two keys exist because sometimes you are
+ * looking for a project by name rather than reading the board.
+ */
+export function sortRows(rows, key = 'overrun') {
+  const byName = (a, b) => a.name.localeCompare(b.name);
+
+  if (key === 'name') return [...rows].sort(byName);
+
+  if (key === 'stage') {
+    return [...rows].sort((a, b) => {
+      const an = a.substage_name ?? '', bn = b.substage_name ?? '';
+      if (!an !== !bn) return an ? -1 : 1;       // untracked rows sink, never vanish
+      const g = (a.stage_group_name ?? '').localeCompare(b.stage_group_name ?? '');
+      return g !== 0 ? g : an.localeCompare(bn) || byName(a, b);
+    });
+  }
+
   return [...rows].sort((a, b) => {
     const la = lateness(a), lb = lateness(b);
     if (la.late !== lb.late) return la.late ? -1 : 1;
@@ -39,7 +59,7 @@ export function sortRows(rows) {
     const aActive = a.substage_name ? 1 : 0;
     const bActive = b.substage_name ? 1 : 0;
     if (aActive !== bActive) return bActive - aActive;
-    return a.name.localeCompare(b.name);
+    return byName(a, b);
   });
 }
 
@@ -48,7 +68,33 @@ export function summarise(rows) {
     live: rows.filter((r) => r.status === 'ongoing').length,
     late: rows.filter((r) => lateness(r).late).length,
     blocked: rows.filter((r) => r.blocked_by).length,
+    // 20 of 37 projects have no stage data at all. That number is a finding,
+    // not an embarrassment to hide: it is the first thing the studio has to
+    // decide about. See CLAUDE.md, "Show the gaps".
+    untracked: rows.filter((r) => r.substage_count === 0).length,
   };
+}
+
+/** The four card filters. Exactly one can be on at a time. */
+export const FOCUS = {
+  live:      (r) => r.status === 'ongoing',
+  late:      (r) => lateness(r).late,
+  blocked:   (r) => !!r.blocked_by,
+  untracked: (r) => r.substage_count === 0,
+};
+
+/**
+ * Free-text search. Matches what someone would actually type: a project, a
+ * client, a stage they know is running, or a colleague's name.
+ */
+export function matches(row, q, team) {
+  if (!q) return true;
+  const hay = [
+    row.name, row.code, row.client_name, row.type,
+    row.substage_name, row.stage_group_name, row.blocked_by,
+    ...(team ?? []).map((t) => t.name),
+  ].filter(Boolean).join(' ').toLowerCase();
+  return q.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w));
 }
 
 /** Planned duration in days, or null. Weeks are how the studio thinks; days are what we count. */
