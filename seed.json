@@ -1,0 +1,1769 @@
+{
+  "people": [
+    "Gururaj Sir",
+    "Madhu",
+    "Niharika",
+    "Varun",
+    "Vibhaas",
+    "Pavan",
+    "Selva",
+    "Venugopal",
+    "Vanisree"
+  ],
+  "stage_groups": [
+    {
+      "name": "CONCEPT DEVELOPMENT"
+    },
+    {
+      "name": "DESIGN DEVELOPMENT"
+    },
+    {
+      "name": "FOUNDATION DWGS"
+    },
+    {
+      "name": "ELEVATION DESIGNING"
+    },
+    {
+      "name": "GFC - ARCHITECTURE"
+    },
+    {
+      "name": "ID-DESIGN DEVELOPMENT"
+    },
+    {
+      "name": "GFC-ID"
+    }
+  ],
+  "substages": [
+    {
+      "name": "MASSING & ZONING CONCEPT",
+      "group": "CONCEPT DEVELOPMENT",
+      "seq": 0,
+      "planned_weeks": 3,
+      "deliverables": [
+        "Massing concept",
+        "Mood board",
+        "3d printed model"
+      ]
+    },
+    {
+      "name": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+      "group": "CONCEPT DEVELOPMENT",
+      "seq": 1,
+      "planned_weeks": 1.5,
+      "deliverables": [
+        "Bye-law analysis",
+        "Architectural Plans",
+        "Architectural Sections",
+        "Architectural Elevations",
+        "Bye-law deviation drawing",
+        "Staircase Section"
+      ]
+    },
+    {
+      "name": "DETAILED ARCHITECTURAL SET",
+      "group": "DESIGN DEVELOPMENT",
+      "seq": 2,
+      "planned_weeks": 2,
+      "deliverables": [
+        "Architectural Plans",
+        "Architectural Sections, including staircase",
+        "Preliminary MEP drawing",
+        "Basic Structual Intgration Column and beam layout.",
+        "Built-up area drawing",
+        "Plinth Level drawing",
+        "Clearence drawing",
+        "Setting out plan?????????"
+      ]
+    },
+    {
+      "name": "SANCTIONING",
+      "group": "DESIGN DEVELOPMENT",
+      "seq": 3,
+      "planned_weeks": 1.5,
+      "deliverables": []
+    },
+    {
+      "name": "STRUCTURAL DRAWINGS TILL PLINTH",
+      "group": "FOUNDATION DWGS",
+      "seq": 4,
+      "planned_weeks": "NA",
+      "deliverables": [
+        "Foundation & Excavation drawing",
+        "Plinth beam",
+        "Grade Slab Drawing",
+        "Underground tanks",
+        "Compound wall foundations",
+        "Setback Drainage drawing"
+      ]
+    },
+    {
+      "name": "ELEVATION FINALISATION",
+      "group": "ELEVATION DESIGNING",
+      "seq": 5,
+      "planned_weeks": 3,
+      "deliverables": [
+        "Elevation Finalisation"
+      ]
+    },
+    {
+      "name": "SECONDARY ELEVATION",
+      "group": "ELEVATION DESIGNING",
+      "seq": 6,
+      "planned_weeks": 3,
+      "deliverables": [
+        "Secondary Elevation Finalisation",
+        "Detailed Architectural plans revised as per elevation",
+        "Detailed Architectural sections revised as per elevation",
+        "Detailed Architectural Elevations as per selected elevation",
+        "Revised MEP drawing as per new elevation",
+        "Revised deviation drawing as per elevation",
+        "Detailed Fa\u00e7ade wall sections - 1:20",
+        "Parapet coping details"
+      ]
+    },
+    {
+      "name": "STAIRCASE DESIGNING",
+      "group": "ELEVATION DESIGNING",
+      "seq": 7,
+      "planned_weeks": 1.5,
+      "deliverables": [
+        "Staircase design finalisation",
+        "Detailed Staircase Drawing"
+      ]
+    },
+    {
+      "name": "NIGHT RENDERS",
+      "group": "ELEVATION DESIGNING",
+      "seq": 8,
+      "planned_weeks": 1,
+      "deliverables": [
+        "Night Renders finalisation"
+      ]
+    },
+    {
+      "name": "CIVIL DRAWINGS",
+      "group": "GFC - ARCHITECTURE",
+      "seq": 9,
+      "planned_weeks": null,
+      "deliverables": [
+        "Wall Construction Drawing",
+        "Detailed Elevations",
+        "Slab Electrical Drawing as per preliminary beam layout",
+        "Structrual Drawings",
+        "Detailed Sections",
+        "Lintel Drawings",
+        "Finish detailing",
+        "Water-proofing details",
+        "Toilet Details - Internal elevations and sections showing fittings, civil works and waterproofing.",
+        "Niche and wall depression layout",
+        "Staricase - Structural drawings"
+      ]
+    },
+    {
+      "name": "COMPONENT DRAWINGS & COORDINATION",
+      "group": "GFC - ARCHITECTURE",
+      "seq": 10,
+      "planned_weeks": null,
+      "deliverables": [
+        "Window Schedule",
+        "Railing Schedule",
+        "HVAC drawing",
+        "Flooring Drawing"
+      ]
+    },
+    {
+      "name": "MATERIAL SELECTION",
+      "group": "GFC - ARCHITECTURE",
+      "seq": 11,
+      "planned_weeks": null,
+      "deliverables": []
+    },
+    {
+      "name": "SERVICES DRAWING",
+      "group": "GFC - ARCHITECTURE",
+      "seq": 12,
+      "planned_weeks": null,
+      "deliverables": [
+        "Plumbing Drawings - Drainage drawings",
+        "Plumbing drawings - water supply drawings",
+        "Electrical drawings - Lighting layout",
+        "Electrical drawings - Electrical conduit drawing",
+        "Electrical drawings - ELV layout",
+        "Electrical Drawings - Automation drawing"
+      ]
+    },
+    {
+      "name": "MOOD BOARD",
+      "group": "ID-DESIGN DEVELOPMENT",
+      "seq": 13,
+      "planned_weeks": null,
+      "deliverables": []
+    },
+    {
+      "name": "SPACE OPTIMZATION IN CIVIL",
+      "group": "ID-DESIGN DEVELOPMENT",
+      "seq": 14,
+      "planned_weeks": null,
+      "deliverables": []
+    },
+    {
+      "name": "INTERIOR PROPOSAL",
+      "group": "ID-DESIGN DEVELOPMENT",
+      "seq": 15,
+      "planned_weeks": null,
+      "deliverables": []
+    },
+    {
+      "name": "INTERIOR GFC",
+      "group": "GFC-ID",
+      "seq": 16,
+      "planned_weeks": null,
+      "deliverables": [
+        "BATHROOM GF'S",
+        "FALSE CEILING"
+      ]
+    },
+    {
+      "name": "MATERIAL SELECTION",
+      "group": "GFC-ID",
+      "seq": 17,
+      "planned_weeks": null,
+      "deliverables": []
+    },
+    {
+      "name": "ELECTRICAL COORDINATION",
+      "group": "GFC-ID",
+      "seq": 18,
+      "planned_weeks": null,
+      "deliverables": []
+    },
+    {
+      "name": "PLUMBING COORDINATION",
+      "group": "GFC-ID",
+      "seq": 19,
+      "planned_weeks": null,
+      "deliverables": []
+    },
+    {
+      "name": "MATERIAL SELECTION",
+      "group": "GFC-ID",
+      "seq": 20,
+      "planned_weeks": null,
+      "deliverables": []
+    }
+  ],
+  "projects": [
+    {
+      "sl": 1,
+      "name": "Vasanth Chopra",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Varun": "DD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 2,
+      "name": "Ashok Ranka",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Niharika": "WD",
+        "Pavan": "WD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "FOUNDATION DWGS",
+          "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "SECONDARY ELEVATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "STAIRCASE DESIGNING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "NIGHT RENDERS",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "CIVIL DRAWINGS",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "COMPONENT DRAWINGS & COORDINATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "SERVICES DRAWING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "MOOD BOARD",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "SPACE OPTIMZATION IN CIVIL",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "INTERIOR PROPOSAL",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "INTERIOR GFC",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "MATERIAL SELECTION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "ELECTRICAL COORDINATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "PLUMBING COORDINATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "MATERIAL SELECTION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 3,
+      "name": "Kuldeep Garg",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Varun": "-",
+        "Selva": "ID"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "FOUNDATION DWGS",
+          "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "SECONDARY ELEVATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "STAIRCASE DESIGNING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "NIGHT RENDERS",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "COMPONENT DRAWINGS & COORDINATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "MATERIAL SELECTION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "SERVICES DRAWING",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "MOOD BOARD",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 4,
+      "name": "Ajay Kabra, Veerasandra",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Niharika": "WD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "done",
+          "concluded_on": "2026-03-19",
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "SECONDARY ELEVATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": "HOLD"
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "CIVIL DRAWINGS",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 5,
+      "name": "Vijay Sultania",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Varun": "WD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "FOUNDATION DWGS",
+          "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "NIGHT RENDERS",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 6,
+      "name": "Anup Embassy Springs",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Vibhaas": "DD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "in_process",
+          "concluded_on": "2026-04-06",
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": "2026-03-19",
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 7,
+      "name": "T S Sukumar",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "."
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "FOUNDATION DWGS",
+          "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "SECONDARY ELEVATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "STAIRCASE DESIGNING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "NIGHT RENDERS",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "COMPONENT DRAWINGS & COORDINATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 8,
+      "name": "Ketan Shah",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Vibhaas": "WD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "CIVIL DRAWINGS",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "COMPONENT DRAWINGS & COORDINATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "SERVICES DRAWING",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 9,
+      "name": "Vinay Kothari",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Vibhaas": "ID"
+      },
+      "substages": [
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "MOOD BOARD",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "SPACE OPTIMZATION IN CIVIL",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "INTERIOR PROPOSAL",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "INTERIOR GFC",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "MATERIAL SELECTION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 10,
+      "name": "Srujan Reddy",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Venugopal": "WD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "unknown",
+          "concluded_on": "2026-03-25",
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "SECONDARY ELEVATION",
+          "status": "unknown",
+          "concluded_on": "2026-03-27",
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "STAIRCASE DESIGNING",
+          "status": "unknown",
+          "concluded_on": "2026-08-19",
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 11,
+      "name": "Sanjeev Bhutra",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Venugopal": "DD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 12,
+      "name": "Basawaraj Patil, Kalaburagi",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Madhu": "DD",
+        "Venugopal": "DD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "FOUNDATION DWGS",
+          "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 13,
+      "name": "Congress Office, Sedam",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Madhu": "DD",
+        "Varun": "WD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "unknown",
+          "concluded_on": "2026-07-09",
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "STAIRCASE DESIGNING",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 14,
+      "name": "Kanota Jaipur",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 2,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Selva": "DD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 15,
+      "name": "Sidharth Upasana",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Niharika": "WD"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "FOUNDATION DWGS",
+          "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "SECONDARY ELEVATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "STAIRCASE DESIGNING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "NIGHT RENDERS",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "CIVIL DRAWINGS",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "COMPONENT DRAWINGS & COORDINATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "MATERIAL SELECTION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "SERVICES DRAWING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "MOOD BOARD",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "SPACE OPTIMZATION IN CIVIL",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "INTERIOR PROPOSAL",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "INTERIOR GFC",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "MATERIAL SELECTION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "ELECTRICAL COORDINATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "PLUMBING COORDINATION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "MATERIAL SELECTION",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 16,
+      "name": "Pavan Jain",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Pavan": "WD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 17,
+      "name": "Mantri Blossom, 19th",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 1,
+      "assignments": {},
+      "substages": [
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "MOOD BOARD",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "SPACE OPTIMZATION IN CIVIL",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "INTERIOR PROPOSAL",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "INTERIOR GFC",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "MATERIAL SELECTION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "ELECTRICAL COORDINATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "PLUMBING COORDINATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "MATERIAL SELECTION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 18,
+      "name": "Gala Experience center",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Selva": "WD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 20,
+      "name": "Mahesh Mittal",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Selva": "WD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 21,
+      "name": "Sandeep Tekriwal",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Selva": "WD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 22,
+      "name": "Sumit Tekriwal",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Selva": "WD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 23,
+      "name": "Ajay Achpal",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Selva": "DD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 24,
+      "name": "Manit Somani",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 2,
+      "assignments": {
+        "Gururaj Sir": "DD",
+        "Madhu": ".",
+        "Niharika": "-"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "cancelled",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "in_process",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 25,
+      "name": "Mukesh Gala",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 0,
+      "assignments": {},
+      "substages": []
+    },
+    {
+      "sl": 26,
+      "name": "Rameshwar Bhutra",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Madhu": "DD",
+        "Venugopal": "DD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 27,
+      "name": "Abhijit Rathi",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Pavan": "DD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 28,
+      "name": "Decorons Trinity",
+      "type": "ID",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Vibhaas": "-"
+      },
+      "substages": []
+    },
+    {
+      "sl": 29,
+      "name": "Surendra",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 1,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": ".",
+        "Pavan": "-"
+      },
+      "substages": [
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "MASSING & ZONING CONCEPT",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "CONCEPT DEVELOPMENT",
+          "substage": "ARCHITECTURAL DRAWINGS - SIGN-OFF",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "DETAILED ARCHITECTURAL SET",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "DESIGN DEVELOPMENT",
+          "substage": "SANCTIONING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "FOUNDATION DWGS",
+          "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "ELEVATION FINALISATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "SECONDARY ELEVATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "STAIRCASE DESIGNING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ELEVATION DESIGNING",
+          "substage": "NIGHT RENDERS",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "CIVIL DRAWINGS",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "COMPONENT DRAWINGS & COORDINATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "MATERIAL SELECTION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC - ARCHITECTURE",
+          "substage": "SERVICES DRAWING",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "MOOD BOARD",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "SPACE OPTIMZATION IN CIVIL",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "ID-DESIGN DEVELOPMENT",
+          "substage": "INTERIOR PROPOSAL",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "INTERIOR GFC",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "MATERIAL SELECTION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "ELECTRICAL COORDINATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "PLUMBING COORDINATION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        },
+        {
+          "group": "GFC-ID",
+          "substage": "MATERIAL SELECTION",
+          "status": "done",
+          "concluded_on": null,
+          "note": null
+        }
+      ]
+    },
+    {
+      "sl": 30,
+      "name": "Ankit Mantry, Stonex",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": ".",
+        "Venugopal": "-"
+      },
+      "substages": []
+    },
+    {
+      "sl": 31,
+      "name": "P. N. Sadan",
+      "type": "AR",
+      "status": "ONGOING",
+      "priority": 3,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "DD",
+        "Varun": "DD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 32,
+      "name": "Navin and Swati Chapperia",
+      "type": "ID",
+      "status": null,
+      "priority": null,
+      "assignments": {
+        "Madhu": "."
+      },
+      "substages": []
+    },
+    {
+      "sl": 32,
+      "name": "Hotel Project, Hyderabad",
+      "type": "AR",
+      "status": null,
+      "priority": null,
+      "assignments": {
+        "Gururaj Sir": ".",
+        "Madhu": "."
+      },
+      "substages": []
+    },
+    {
+      "sl": 33,
+      "name": "Dinesh Goel",
+      "type": "IR",
+      "status": null,
+      "priority": null,
+      "assignments": {
+        "Pavan": "WD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 34,
+      "name": "Muskesh Gala",
+      "type": "ID",
+      "status": null,
+      "priority": null,
+      "assignments": {
+        "Pavan": "WD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 35,
+      "name": "Pavan Bajaj",
+      "type": "ID",
+      "status": null,
+      "priority": null,
+      "assignments": {
+        "Pavan": "WD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 36,
+      "name": "Abhi Jain",
+      "type": "ID",
+      "status": null,
+      "priority": null,
+      "assignments": {
+        "Vibhaas": "WD"
+      },
+      "substages": []
+    },
+    {
+      "sl": 37,
+      "name": "Ankit Jain",
+      "type": "ID",
+      "status": null,
+      "priority": null,
+      "assignments": {
+        "Vibhaas": "WD"
+      },
+      "substages": []
+    }
+  ]
+}

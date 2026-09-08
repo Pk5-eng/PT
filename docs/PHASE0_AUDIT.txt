@@ -1,0 +1,238 @@
+KABRA ARCHITECTS DASHBOARD - PHASE 0 SEED AUDIT
+generated 2026-09-08 from seed.json
+
+==============================================================================
+1. SHAPE
+==============================================================================
+people        9
+stage_groups  7
+substages     21
+projects      37
+project_substage rows implied  151
+deliverables (taxonomy)        58
+
+==============================================================================
+2. ASSIGNMENTS PER PERSON
+==============================================================================
+person          total  non-INVOLVED-equivalent   (codes used)
+Madhu            20    14                       . DD
+Gururaj Sir      16     1                       . DD
+Pavan             7     7                       - DD WD
+Selva             7     7                       DD ID WD
+Vibhaas           6     6                       - DD ID WD
+Varun             5     5                       - DD WD
+Venugopal         5     5                       - DD WD
+Niharika          4     4                       - WD
+Vanisree          0     0                       
+
+projects with zero assignments: 2
+  sl 17  Mantri Blossom, 19th
+  sl 25  Mukesh Gala
+
+==============================================================================
+3. ROLE CODES  [blocker check]
+==============================================================================
+code   count   valid per schema check constraint
+"DD"     24    yes
+"."      21    NO  <-- will violate assignments_role_code_check
+"WD"     18    yes
+"-"       5    NO  <-- will violate assignments_role_code_check
+"ID"      2    NO  <-- will violate assignments_role_code_check
+
+==============================================================================
+4. SUBSTAGE TAXONOMY  [blocker check]
+==============================================================================
+substage names appearing more than once:
+  "MATERIAL SELECTION" x3  ->  GFC - ARCHITECTURE | GFC-ID | GFC-ID
+
+AMBIGUOUS: "GFC-ID :: MATERIAL SELECTION" exists 2 times in the SAME stage group (seq 17, 20)
+
+planned_weeks values
+--------------------
+  "NA" (string)            x1
+  1 (number)               x1
+  1.5 (number)             x3
+  2 (number)               x1
+  3 (number)               x3
+  null (object)            x12
+
+==============================================================================
+5. PROJECT SUBSTAGE ROWS  [blocker check]
+==============================================================================
+status   count   valid per project_substage check constraint
+done         107    yes
+in_process    39    yes
+unknown        4    NO  <-- will violate the check constraint
+cancelled      1    yes
+
+duplicate (project, group, substage) references - collide on unique(project_id, substage_id):
+  Ashok Ranka: GFC-ID :: MATERIAL SELECTION
+  Sidharth Upasana: GFC-ID :: MATERIAL SELECTION
+  Mantri Blossom, 19th: GFC-ID :: MATERIAL SELECTION
+  Surendra: GFC-ID :: MATERIAL SELECTION
+
+rows with concluded_on but status <> 'done': 5
+rows carrying a free-text note:              1
+  Ajay Kabra, Veerasandra / SECONDARY ELEVATION: "HOLD"
+
+started_on coverage - this drives the whole board
+-------------------------------------------------
+rows with concluded_on: 7
+rows with started_on:   0   (the seed has no start dates at all)
+
+projects with at least one in_process substage: 14 of 37
+=> v_board.days_in_substage and days_over will be NULL for all 37 projects on day one,
+   because both derive from started_on and nothing seeds it.
+
+==============================================================================
+6. PROJECTS WITH NO SUBSTAGE DATA  [spec section 6.1]
+==============================================================================
+20 of 37 projects have zero substage rows:
+  sl  1  AR  Vasanth Chopra                 Varun:DD
+  sl 16  ID  Pavan Jain                     Pavan:WD
+  sl 18  ID  Gala Experience center         Selva:WD
+  sl 20  ID  Mahesh Mittal                  Selva:WD
+  sl 21  ID  Sandeep Tekriwal               Selva:WD
+  sl 22  ID  Sumit Tekriwal                 Selva:WD
+  sl 23  ID  Ajay Achpal                    Selva:DD
+  sl 25  ID  Mukesh Gala                    nobody assigned
+  sl 26  AR  Rameshwar Bhutra               Madhu:DD, Venugopal:DD
+  sl 27  ID  Abhijit Rathi                  Pavan:DD
+  sl 28  ID  Decorons Trinity               Vibhaas:-
+  sl 30  AR  Ankit Mantry, Stonex           Gururaj Sir:., Madhu:., Venugopal:-
+  sl 31  AR  P. N. Sadan                    Gururaj Sir:., Madhu:DD, Varun:DD
+  sl 32  ID  Navin and Swati Chapperia      Madhu:.
+  sl 32  AR  Hotel Project, Hyderabad       Gururaj Sir:., Madhu:.
+  sl 33  IR  Dinesh Goel                    Pavan:WD
+  sl 34  ID  Muskesh Gala                   Pavan:WD
+  sl 35  ID  Pavan Bajaj                    Pavan:WD
+  sl 36  ID  Abhi Jain                      Vibhaas:WD
+  sl 37  ID  Ankit Jain                     Vibhaas:WD
+
+==============================================================================
+7. PROJECT FIELDS  [spec section 6.2-6.4]
+==============================================================================
+
+type
+----
+  AR  20  
+  ID  16  
+  IR  1  
+
+status
+------
+  ONGOING    30  maps to ongoing
+  null        7  NULL - column is NOT NULL, needs a default
+
+priority
+--------
+  priority 0       1  3%
+  priority 1       2  5%
+  priority 2       2  5%
+  priority 3      25  68%
+  priority null    7  19%
+
+code and site_location
+----------------------
+  code present:          0 of 37
+  site_location present: 0 of 37
+  client_name present:   0 of 37
+
+  Note: seed.json carries no code, client_name or site_location field at all.
+  Spec 6.3 says codes exist for 13 of 37 - they did not survive the decode.
+
+==============================================================================
+8. NAMES AND IDENTIFIERS  [spec section 6.5]
+==============================================================================
+exact duplicate names after normalisation:
+  none
+
+near-duplicate names (edit distance <= 2 on normalised name):
+  sl 25 "Mukesh Gala" (ID)  ~  sl 34 "Muskesh Gala" (ID)   distance 1
+
+sl numbers
+----------
+  range 1..37, 37 rows
+  duplicated sl: 32
+    sl 32: Navin and Swati Chapperia  |  Hotel Project, Hyderabad
+  missing sl:    19
+  (sl is a spreadsheet row label, not a key. The schema uses uuids and does not store it.)
+
+malformed text
+--------------
+  typo in deliverable: "Basic Structual Intgration Column and beam layout."
+  typo in deliverable: "Clearence drawing"
+  deliverable of "DETAILED ARCHITECTURAL SET": "Setting out plan?????????"
+  typo in deliverable: "Staricase - Structural drawings"
+  typo in substage name: "SPACE OPTIMZATION IN CIVIL"
+  ambiguous abbreviation: "BATHROOM GF'S" (GFC?)
+
+==============================================================================
+9. STAGE GROUPS
+==============================================================================
+seed has 7 stage groups; CLAUDE.md says "one of 8 phases".
+  seq 0  CONCEPT DEVELOPMENT      2 substage(s)
+  seq 1  DESIGN DEVELOPMENT       2 substage(s)
+  seq 2  FOUNDATION DWGS          1 substage(s)
+  seq 3  ELEVATION DESIGNING      4 substage(s)
+  seq 4  GFC - ARCHITECTURE       4 substage(s)
+  seq 5  ID-DESIGN DEVELOPMENT    3 substage(s)
+  seq 6  GFC-ID                   5 substage(s)
+
+stage_groups.seq is NOT in seed.json - it is derived from array order above.
+v_board picks the current substage by (stage_group.seq, substage.seq), so this order is load-bearing.
+
+==============================================================================
+10. VERIFYING THE SPEC'S OWN ACCEPTANCE NUMBERS
+==============================================================================
+Spec Phase 1 acceptance: "counting active assignments per person returns Madhu = 14".
+Spec Team-load screen:   "Madhu is on 14 of 37 projects and Selva, the next highest, is on 7".
+
+  Madhu, all assignment rows in seed:            20
+  Madhu, excluding role "." (advisory):          14
+  Madhu, excluding "." and "-":                  14
+  Selva, all assignment rows in seed:            7
+  Selva, excluding "." and "-":                  7
+
+  => "Madhu = 14" holds only when "." and "-" are treated as non-work roles.
+     That is the definition the seed script and the Team-load screen must both use.
+
+==============================================================================
+BLOCKERS - these fail an insert or load ambiguously
+==============================================================================
+
+B1. Role codes ".", "-", "ID" are used in the seed but are not in the schema's allowed set (PI, DD, WD, PE, CL, INVOLVED). 21 rows use ".", 5 use "-", 2 use "ID". Every one of these inserts fails until they are mapped.
+
+B2. "GFC-ID :: MATERIAL SELECTION" appears 2 times inside one stage group (seq 17 and 20). Project rows reference substages by (group, name) only, so they cannot be resolved to a substage id. Spec section 6.6 says show the stage group next to the name - that does not disambiguate these two.
+
+B3. planned_weeks is the string "NA" on STRUCTURAL DRAWINGS TILL PLINTH. The column is numeric; this must become null.
+
+B4. project_substage.status values "unknown" (4 rows) are not in the allowed set. These are cells the spreadsheet had a date in but no colour.
+
+B5. 1 substage row(s) carry a note the schema has nowhere to put (project_substage has no note column): Ajay Kabra, Veerasandra / SECONDARY ELEVATION: "HOLD".
+
+B6. 7 projects have status null (Navin and Swati Chapperia, Hotel Project, Hyderabad, Dinesh Goel, Muskesh Gala, Pavan Bajaj, Abhi Jain, Ankit Jain) but projects.status is NOT NULL. They default to 'ongoing' unless told otherwise - and all 7 look like enquiries, not live jobs.
+
+==============================================================================
+DECISIONS FOR THE FIRM - these load fine but the value is wrong or useless
+==============================================================================
+
+D1. 13 of 21 substages have no planned_weeks. days_over is null whenever planned_weeks is null, so the board cannot rank any project whose current substage is one of these: STRUCTURAL DRAWINGS TILL PLINTH, CIVIL DRAWINGS, COMPONENT DRAWINGS & COORDINATION, MATERIAL SELECTION, SERVICES DRAWING, MOOD BOARD, SPACE OPTIMZATION IN CIVIL, INTERIOR PROPOSAL, INTERIOR GFC, MATERIAL SELECTION, ELECTRICAL COORDINATION, PLUMBING COORDINATION, MATERIAL SELECTION.
+
+D2. No project_substage row has started_on. v_board sorts by days_over desc, so on day one every row ties at null and the board's headline number is blank for all 37 projects. Phase 5's acceptance test ("the top row is a project you already knew was stuck") cannot pass from seeded data - only from statuses flipped inside the app afterwards.
+
+D3. 20 of 37 projects have no substage data. CLAUDE.md says show them as "Not set" and never hide them; spec 6.1 says decide per project whether to track it. Both can hold, but someone has to say which of these 20 are live work and which are dormant enquiries.
+
+D4. priority = 3 on 25 of 37 projects (68%). A field where that many rows share one value cannot order anything. Spec 6.2: redefine the scale or drop the column.
+
+D5. seed.json has no code, client_name or site_location for any project. Spec 6.3 says 13 codes exist in the spreadsheet; they were not decoded. Either re-extract them or the columns ship empty.
+
+D6. Near-duplicate project names, probably one client each: sl 25 "Mukesh Gala" (ID)  ~  sl 34 "Muskesh Gala" (ID)   distance 1.
+
+D7. seed.json has 7 stage groups; CLAUDE.md says 8. Either a group was lost in the decode or the doc is stale. The count matters because stage_group order decides which substage the board shows.
+
+D8. Spec Phase 1 acceptance is "Madhu = 14". Seed gives Madhu 20 rows total, 14 excluding ".", 14 excluding "." and "-". Pick the definition before writing the seed script, because it is also the Team-load screen's definition.
+
+==============================================================================
+6 blockers, 8 decisions. Nothing enters a database until both lists are closed.
+==============================================================================

@@ -1,0 +1,17 @@
+{
+  "name": "ka-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Kabra Architects project dashboard. Installable PWA on Cloudflare Pages + Supabase.",
+  "scripts": {
+    "audit": "node scripts/audit-seed.mjs",
+    "audit:write": "node scripts/audit-seed.mjs --write",
+    "seed:dry": "node scripts/seed.mjs --dry-run",
+    "seed": "node scripts/seed.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "engines": { "node": ">=20" }
+}
