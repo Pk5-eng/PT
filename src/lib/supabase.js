@@ -29,7 +29,12 @@ function check() {
     return `VITE_SUPABASE_URL is "${url}", which is not a URL. It should look like https://xxxxxxxx.supabase.co — copy the Project URL from Supabase, Settings then API.`;
   }
   if (/supabase\.com\/dashboard/i.test(url)) {
-    return `VITE_SUPABASE_URL is the dashboard address, not the project API URL. It should look like https://xxxxxxxx.supabase.co, from Settings then API.`;
+    // The dashboard address carries the project ref, so the correct value can
+    // be spelled out rather than described. Saves a trip to Supabase.
+    const ref = url.match(/\/project\/([a-z0-9]{16,})/i)?.[1];
+    return ref
+      ? `VITE_SUPABASE_URL is the dashboard address, not the project API URL. Set it to https://${ref}.supabase.co and redeploy.`
+      : `VITE_SUPABASE_URL is the dashboard address, not the project API URL. It should look like https://xxxxxxxx.supabase.co, from Settings then API.`;
   }
   if (anonKey.length < 30) {
     return 'VITE_SUPABASE_ANON_KEY looks too short to be a key. Copy the anon / public key from Supabase, Settings then API.';

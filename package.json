@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Kabra Architects project dashboard. Installable PWA on Cloudflare Pages + Supabase.",
+  "description": "Kabra Architects project dashboard. A plain website on Vercel + Supabase.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
