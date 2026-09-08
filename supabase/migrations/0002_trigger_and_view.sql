@@ -6,6 +6,10 @@
 -- dropdown) but means the seed script must set started_on / concluded_on itself
 -- on INSERT. See scripts/seed.mjs.
 
+-- Wrapped in a transaction: if any statement fails the whole file rolls back,
+-- rather than leaving the schema half-applied.
+begin;
+
 create or replace function stamp_and_log() returns trigger as $$
 begin
   if tg_op = 'UPDATE' and new.status is distinct from old.status then
@@ -54,3 +58,5 @@ select
     order by b.raised_on limit 1) as blocked_by
 from projects p
 left join current_sub c on c.project_id = p.id;
+
+commit;

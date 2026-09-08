@@ -11,6 +11,10 @@
 -- the one table with RLS off - readable and writable by anyone holding the
 -- public anon key. It is enabled below.
 
+-- Wrapped in a transaction: if any statement fails the whole file rolls back,
+-- rather than leaving the schema half-applied.
+begin;
+
 alter table people             enable row level security;
 alter table projects           enable row level security;
 alter table stage_groups       enable row level security;
@@ -97,3 +101,5 @@ revoke insert, update on events from authenticated, anon;
 -- cannot be read with the anon key alone.
 revoke all on v_board from anon;
 grant select on v_board to authenticated;
+
+commit;

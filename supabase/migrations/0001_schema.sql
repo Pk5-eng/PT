@@ -2,6 +2,10 @@
 -- Base schema, verbatim from KA_DASHBOARD_BUILD_SPEC.md section 3.
 -- Apply first, in the Supabase SQL editor or via the CLI.
 
+-- Wrapped in a transaction: if any statement fails the whole file rolls back,
+-- rather than leaving the schema half-applied.
+begin;
+
 create extension if not exists "pgcrypto";
 
 create table people (
@@ -107,3 +111,5 @@ create index on assignments (person_id);
 -- during seeding and by seq on every board read.
 create index on substages (stage_group_id, seq);
 create index on deliverables (substage_id, seq);
+
+commit;

@@ -8,10 +8,14 @@
     "audit": "node scripts/audit-seed.mjs",
     "audit:write": "node scripts/audit-seed.mjs --write",
     "seed:dry": "node scripts/seed.mjs --dry-run",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "seed:sql": "node scripts/seed.mjs --emit-sql",
+    "test": "./test/run.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
