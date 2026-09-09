@@ -113,6 +113,51 @@ front of this database.
 `npm run seed:dry` followed by `npm run seed`. Same result; the SQL editor route just
 needs less setup.
 
+## Automatic migrations
+
+`.github/workflows/migrate.yml` applies `ALL_MIGRATIONS.sql` on every push to the
+production branch, so the schema and the deployed app cannot drift apart. It runs the
+whole test suite against a throwaway Postgres **first**, and only touches the real
+database if that passes — so a migration that is not idempotent, or that breaks the
+trigger, the board view or an RLS policy, never reaches Supabase.
+
+It needs one repository secret. Set it up once:
+
+1. **Get the connection string.** Supabase → your project → **Connect** (top bar) →
+   **Session pooler**. It looks like
+   `postgresql://postgres.<ref>:[YOUR-PASSWORD]@aws-0-<region>.pooler.supabase.com:5432/postgres`.
+
+   Use the **session pooler**, not the direct connection. Direct connections are
+   IPv6-only and GitHub's runners are IPv4-only, so the direct string will simply time
+   out. Session mode (port 5432), not transaction mode (6543): migrations are DDL inside
+   explicit transactions.
+
+2. **Fill in the password.** It is the database password from when the project was
+   created. If it is lost, Supabase → Settings → Database → **Reset database password**.
+   Resetting it does not affect the app, which authenticates with the anon key and never
+   sees this password.
+
+3. **Append `?sslmode=require`** to the end of the string.
+
+4. **Add it as a secret.** GitHub → the repo → Settings → Secrets and variables →
+   Actions → **New repository secret**. Name it exactly `SUPABASE_DB_URL`, paste the
+   string as the value.
+
+The job fails loudly if the secret is missing — a half-configured safety net is worse
+than none, so it does not skip quietly.
+
+**This credential connects as `postgres` and bypasses Row Level Security entirely.** It is
+the most powerful key in the project and the only place it should ever exist is that
+secret. This repository is public: never put it in a commit, an issue, a pull request or
+a chat. GitHub does not expose secrets to pull requests from forks, and this workflow only
+runs on pushes to the production branch, which only collaborators can make. Rotate it any
+time by resetting the database password and updating the secret.
+
+The workflow and the Vercel build start from the same push and race each other. That race
+is safe by construction, and both halves are tested: the migrations are backward
+compatible with the currently deployed frontend, and the frontend degrades with a banner
+rather than an error if it arrives first. The migration job usually wins anyway.
+
 ## Verifying before you touch Supabase
 
 There are two suites.
@@ -123,7 +168,8 @@ row means, and every figure the analytics screen puts on screen.
 `npm run test:sql` builds a database from nothing, applies every migration, loads the seed
 and asserts the trigger, the board view, the working-day functions, the project-structure
 backfill and every RLS policy — then runs `test/converge.sh`, which proves
-`ALL_MIGRATIONS.sql` converges from every starting state. `npm test` runs everything. The
+`ALL_MIGRATIONS.sql` converges from every starting state and that `READY.sql` tells the
+truth in both directions. `npm test` runs everything, and so does CI on every push. The
 SQL suite needs a local Postgres:
 
 ```sh

@@ -25,6 +25,11 @@ between other tasks, not people who will learn a tool.
 - **No backend server.** The browser talks to Supabase directly. Row Level Security is the
   authorisation layer. Never introduce an API server, a queue, a cron job, or anything that must
   stay running.
+
+  `.github/workflows/migrate.yml` is not an exception to this. It is a script that runs on a
+  push and exits, the same shape as the Vercel build beside it, and nothing depends on it
+  being up. It exists because deploying the app and migrating the schema were two separate
+  acts by a person, and the day they came apart every project screen broke.
 - **A plain website.** No PWA, no manifest, no service worker, no offline mode, no install
   prompt. Decided after the spec was written; the spec's PWA sections are superseded.
 - **Dependencies:** React, Vite, @supabase/supabase-js, date-fns. Adding to this list requires

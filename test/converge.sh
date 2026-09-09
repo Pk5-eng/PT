@@ -92,5 +92,20 @@ check "no duplicate deliverables"          "$(q 'select count(*) from deliverabl
 check "no duplicate people"                "$(q 'select count(*) from people')" "9"
 
 echo
+echo "=== 5. READY.sql tells the truth in both directions ==="
+check "says READY on a current database" "$(q "$(cat supabase/READY.sql)")" "READY"
+reset
+for n in 0001 0002 0003; do
+  psql "$PGURL" -v ON_ERROR_STOP=1 -q -f "$(ls supabase/migrations/${n}_*.sql)" >/dev/null
+done
+BEHIND=$(q "$(cat supabase/READY.sql)")
+case "$BEHIND" in
+  BEHIND*) printf ' pass  %s\n' "says BEHIND on a partial database" ;;
+  *) printf ' FAIL  %s (got %s)\n' "says BEHIND on a partial database" "$BEHIND"; FAIL=$((FAIL+1)) ;;
+esac
+apply
+check "and READY again after one paste"  "$(q "$(cat supabase/READY.sql)")" "READY"
+
+echo
 if [ "$FAIL" -gt 0 ]; then echo "$FAIL FAILURES"; exit 1; fi
 echo "CONVERGES FROM EVERY STATE"
