@@ -61,4 +61,7 @@ comment on column projects.target_delivery is
   'When the project is expected to be delivered. Set on the new-project form and '
   'editable afterwards. A plan, so a person types it; see 0004.';
 
+insert into schema_migrations (version) values ('0009_sections_and_delivery')
+  on conflict (version) do nothing;
+
 commit;

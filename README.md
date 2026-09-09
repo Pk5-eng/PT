@@ -55,10 +55,6 @@ role key, no terminal.
 1. Create a Supabase project (free tier).
 2. Open **SQL Editor** → new query. Paste the *contents* of
    [`supabase/ALL_MIGRATIONS.sql`](supabase/ALL_MIGRATIONS.sql) and Run.
-   That is every migration in order: schema, trigger and board view, Row Level Security,
-   the `target_date` column, the most-overdue board, identity linking, deliverable
-   stamping, working-day arithmetic, section deadlines, the taxonomy additions, the
-   project-structure function and the current board view.
 3. New query. Paste the *contents* of [`supabase/seed.sql`](supabase/seed.sql) and Run.
 4. New query. Verify:
 
@@ -76,8 +72,36 @@ Madhu must return 14.
 To get the file contents: open the file on GitHub, click **Raw**, select all, copy.
 `seed.sql` is ~48 KB and pastes fine.
 
-Both files are generated. After changing a migration run `npm run build:migrations`;
-after changing `seed.json` or the decisions in `scripts/seed.mjs` run `npm run seed:sql`.
+### There is one migration file, and you always paste all of it
+
+`ALL_MIGRATIONS.sql` is the only file anyone ever applies, and it is applied **in full,
+every time, whatever state the database is in**:
+
+| the database is | pasting it |
+|---|---|
+| brand new | builds the whole schema |
+| a few migrations behind | applies only what is missing |
+| already current | changes nothing |
+| pasted twice by mistake | changes nothing |
+
+Every migration in `supabase/migrations/` is idempotent, which is what makes that true.
+It is a rule, not a happy accident: **a new migration that cannot be re-run is a bug.**
+`create table if not exists`, `create or replace function`, `drop policy if exists`
+before `create policy`, `drop view if exists` before `create view` (never
+`create or replace view` — it cannot change a view's column list), `on conflict do
+nothing` on any data it writes. `npm run test:converge` applies the file to a brand new
+database, to one several migrations behind holding real data, and to one that is already
+current, and asserts that all three end up identical and that no existing row moved.
+
+The point is that nobody should ever have to work out *which* file to paste. There is no
+backend and no migration runner — by `CLAUDE.md` there cannot be one — so applying a
+migration is a person pasting a file, and that person is an architect between meetings.
+
+Afterwards, [`supabase/VERIFY.sql`](supabase/VERIFY.sql) says `READY` or `BEHIND`.
+
+Both `ALL_MIGRATIONS.sql` and `seed.sql` are generated. After changing a migration run
+`npm run build:migrations`; after changing `seed.json` or the decisions in
+`scripts/seed.mjs` run `npm run seed:sql`.
 
 RLS is applied in step 2, not deferred to Phase 6 as the spec sequences it. Until those
 policies exist the anon key reads and writes everything, and Phase 2 puts a public URL in
@@ -98,7 +122,9 @@ row means, and every figure the analytics screen puts on screen.
 
 `npm run test:sql` builds a database from nothing, applies every migration, loads the seed
 and asserts the trigger, the board view, the working-day functions, the project-structure
-backfill and every RLS policy. `npm test` runs both. The SQL suite needs a local Postgres:
+backfill and every RLS policy — then runs `test/converge.sh`, which proves
+`ALL_MIGRATIONS.sql` converges from every starting state. `npm test` runs everything. The
+SQL suite needs a local Postgres:
 
 ```sh
 sudo apt-get install -y postgresql

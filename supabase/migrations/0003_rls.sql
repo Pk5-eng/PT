@@ -26,6 +26,10 @@ alter table assignments        enable row level security;
 alter table blocks             enable row level security;
 alter table events             enable row level security;
 
+-- Every policy below is preceded by a drop. `create policy` has no `if not
+-- exists` and errors on a name that is already taken, which made this file
+-- single-use; dropping first makes the whole thing converge instead.
+
 -- Admin test. SECURITY DEFINER so that the policy on `people` can consult
 -- `people` without recursing through that same policy.
 create or replace function is_admin() returns boolean as $$
@@ -36,51 +40,81 @@ create or replace function is_admin() returns boolean as $$
 $$ language sql stable security definer set search_path = public;
 
 -- 1. Any authenticated user reads every table.
+drop policy if exists read_all on people;
 create policy read_all on people             for select to authenticated using (true);
+drop policy if exists read_all on projects;
 create policy read_all on projects           for select to authenticated using (true);
+drop policy if exists read_all on stage_groups;
 create policy read_all on stage_groups       for select to authenticated using (true);
+drop policy if exists read_all on substages;
 create policy read_all on substages          for select to authenticated using (true);
+drop policy if exists read_all on deliverables;
 create policy read_all on deliverables       for select to authenticated using (true);
+drop policy if exists read_all on project_substage;
 create policy read_all on project_substage   for select to authenticated using (true);
+drop policy if exists read_all on project_deliverable;
 create policy read_all on project_deliverable for select to authenticated using (true);
+drop policy if exists read_all on assignments;
 create policy read_all on assignments        for select to authenticated using (true);
+drop policy if exists read_all on blocks;
 create policy read_all on blocks             for select to authenticated using (true);
+drop policy if exists read_all on events;
 create policy read_all on events             for select to authenticated using (true);
 
 -- 2. Any authenticated user may insert and update the operational tables.
+drop policy if exists write_any on projects;
 create policy write_any on projects           for insert to authenticated with check (true);
+drop policy if exists edit_any on projects;
 create policy edit_any  on projects           for update to authenticated using (true) with check (true);
 
+drop policy if exists write_any on project_substage;
 create policy write_any on project_substage   for insert to authenticated with check (true);
+drop policy if exists edit_any on project_substage;
 create policy edit_any  on project_substage   for update to authenticated using (true) with check (true);
 
+drop policy if exists write_any on project_deliverable;
 create policy write_any on project_deliverable for insert to authenticated with check (true);
+drop policy if exists edit_any on project_deliverable;
 create policy edit_any  on project_deliverable for update to authenticated using (true) with check (true);
 
+drop policy if exists write_any on assignments;
 create policy write_any on assignments        for insert to authenticated with check (true);
+drop policy if exists edit_any on assignments;
 create policy edit_any  on assignments        for update to authenticated using (true) with check (true);
 
+drop policy if exists write_any on blocks;
 create policy write_any on blocks             for insert to authenticated with check (true);
+drop policy if exists edit_any on blocks;
 create policy edit_any  on blocks             for update to authenticated using (true) with check (true);
 
 -- Assignments and blocks are the two operational tables where removal is a
 -- normal act rather than history loss: taking someone off a project, or
 -- deleting a block raised by mistake. Everything else clears by an `active`
 -- flag or a `cleared_on` date.
+drop policy if exists del_any on assignments;
 create policy del_any on assignments for delete to authenticated using (true);
+drop policy if exists del_any on blocks;
 create policy del_any on blocks      for delete to authenticated using (true);
 
 -- 3. Only an admin touches the taxonomy and the people list.
+drop policy if exists admin_write on stage_groups;
 create policy admin_write on stage_groups for insert to authenticated with check (is_admin());
+drop policy if exists admin_edit on stage_groups;
 create policy admin_edit  on stage_groups for update to authenticated using (is_admin()) with check (is_admin());
 
+drop policy if exists admin_write on substages;
 create policy admin_write on substages    for insert to authenticated with check (is_admin());
+drop policy if exists admin_edit on substages;
 create policy admin_edit  on substages    for update to authenticated using (is_admin()) with check (is_admin());
 
+drop policy if exists admin_write on deliverables;
 create policy admin_write on deliverables for insert to authenticated with check (is_admin());
+drop policy if exists admin_edit on deliverables;
 create policy admin_edit  on deliverables for update to authenticated using (is_admin()) with check (is_admin());
 
+drop policy if exists admin_write on people;
 create policy admin_write on people       for insert to authenticated with check (is_admin());
+drop policy if exists admin_edit on people;
 create policy admin_edit  on people       for update to authenticated using (is_admin()) with check (is_admin());
 
 -- 4. Nobody deletes the taxonomy or the audit log. No delete policy exists for
@@ -101,5 +135,8 @@ revoke insert, update on events from authenticated, anon;
 -- cannot be read with the anon key alone.
 revoke all on v_board from anon;
 grant select on v_board to authenticated;
+
+insert into schema_migrations (version) values ('0003_rls')
+  on conflict (version) do nothing;
 
 commit;

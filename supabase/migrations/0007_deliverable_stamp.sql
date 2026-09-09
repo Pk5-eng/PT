@@ -29,4 +29,7 @@ create trigger trg_stamp_deliverable
   before insert or update on project_deliverable
   for each row execute function stamp_deliverable();
 
+insert into schema_migrations (version) values ('0007_deliverable_stamp')
+  on conflict (version) do nothing;
+
 commit;

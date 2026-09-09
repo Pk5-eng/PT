@@ -45,4 +45,7 @@ where g.name = 'ID-DESIGN DEVELOPMENT'
     where s.stage_group_id = g.id and s.name = v.name
   );
 
+insert into schema_migrations (version) values ('0010_taxonomy')
+  on conflict (version) do nothing;
+
 commit;

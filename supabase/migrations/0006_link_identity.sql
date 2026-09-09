@@ -39,4 +39,7 @@ end $$ language plpgsql security definer set search_path = public;
 revoke all on function link_my_identity() from public, anon;
 grant execute on function link_my_identity() to authenticated;
 
+insert into schema_migrations (version) values ('0006_link_identity')
+  on conflict (version) do nothing;
+
 commit;

@@ -81,4 +81,7 @@ select ensure_project_structure(id)
 from projects
 where status not in ('cancelled', 'completed');
 
+insert into schema_migrations (version) values ('0011_project_structure')
+  on conflict (version) do nothing;
+
 commit;

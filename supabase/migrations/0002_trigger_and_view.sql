@@ -30,11 +30,19 @@ begin
   return new;
 end $$ language plpgsql security definer;
 
+drop trigger if exists trg_stamp_and_log on project_substage;
+
 create trigger trg_stamp_and_log
   before update on project_substage
   for each row execute function stamp_and_log();
 
-create or replace view v_board as
+-- Dropped rather than replaced: `create or replace view` cannot change a
+-- view's column list, and migration 0012 gives v_board a different one. On a
+-- re-run this would otherwise fail here, before reaching the migration that
+-- defines the shape actually wanted.
+drop view if exists v_board;
+
+create view v_board as
 with current_sub as (
   select distinct on (ps.project_id)
     ps.project_id, ps.substage_id, ps.status, ps.started_on,
@@ -58,5 +66,8 @@ select
     order by b.raised_on limit 1) as blocked_by
 from projects p
 left join current_sub c on c.project_id = p.id;
+
+insert into schema_migrations (version) values ('0002_trigger_and_view')
+  on conflict (version) do nothing;
 
 commit;

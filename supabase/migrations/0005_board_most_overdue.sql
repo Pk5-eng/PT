@@ -89,4 +89,7 @@ left join worst w on w.project_id = p.id;
 revoke all on v_board from anon;
 grant select on v_board to authenticated;
 
+insert into schema_migrations (version) values ('0005_board_most_overdue')
+  on conflict (version) do nothing;
+
 commit;

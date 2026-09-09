@@ -71,4 +71,7 @@ left join current_sub c on c.project_id = p.id;
 revoke all on v_board from anon;
 grant select on v_board to authenticated;
 
+insert into schema_migrations (version) values ('0004_target_date')
+  on conflict (version) do nothing;
+
 commit;

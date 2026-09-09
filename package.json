@@ -16,7 +16,8 @@
     "test": "npm run test:js && ./test/run.sh",
     "build:migrations": "./scripts/build-migrations.sh",
     "test:js": "node --test 'test/js/*.test.mjs'",
-    "test:sql": "./test/run.sh"
+    "test:sql": "./test/run.sh && ./test/converge.sh",
+    "test:converge": "./test/converge.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

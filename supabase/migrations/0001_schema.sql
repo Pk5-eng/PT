@@ -8,7 +8,19 @@ begin;
 
 create extension if not exists "pgcrypto";
 
-create table people (
+-- Which migrations this database has had applied. Not a gate - every migration
+-- in this directory is idempotent and re-running one is a no-op - but a record,
+-- so VERIFY.sql can answer "is this database current?" without anyone having to
+-- remember. Kept out of PostgREST entirely: it is operational metadata and no
+-- browser has any business reading it.
+create table if not exists schema_migrations (
+  version text primary key,
+  applied_at timestamptz not null default now()
+);
+alter table schema_migrations enable row level security;
+revoke all on schema_migrations from anon, authenticated;
+
+create table if not exists people (
   id uuid primary key default gen_random_uuid(),
   auth_id uuid unique,
   name text not null,
@@ -17,7 +29,7 @@ create table people (
   active boolean not null default true
 );
 
-create table projects (
+create table if not exists projects (
   id uuid primary key default gen_random_uuid(),
   code text,
   name text not null,
@@ -31,14 +43,14 @@ create table projects (
   created_by uuid references people(id)
 );
 
-create table stage_groups (
+create table if not exists stage_groups (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   seq int not null,
   active boolean not null default true
 );
 
-create table substages (
+create table if not exists substages (
   id uuid primary key default gen_random_uuid(),
   stage_group_id uuid not null references stage_groups(id),
   name text not null,
@@ -47,7 +59,7 @@ create table substages (
   active boolean not null default true
 );
 
-create table deliverables (
+create table if not exists deliverables (
   id uuid primary key default gen_random_uuid(),
   substage_id uuid not null references substages(id),
   name text not null,
@@ -55,7 +67,7 @@ create table deliverables (
   active boolean not null default true
 );
 
-create table project_substage (
+create table if not exists project_substage (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references projects(id) on delete cascade,
   substage_id uuid not null references substages(id),
@@ -66,7 +78,7 @@ create table project_substage (
   unique (project_id, substage_id)
 );
 
-create table project_deliverable (
+create table if not exists project_deliverable (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references projects(id) on delete cascade,
   deliverable_id uuid not null references deliverables(id),
@@ -75,7 +87,7 @@ create table project_deliverable (
   unique (project_id, deliverable_id)
 );
 
-create table assignments (
+create table if not exists assignments (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references projects(id) on delete cascade,
   person_id uuid not null references people(id),
@@ -83,7 +95,7 @@ create table assignments (
   unique (project_id, person_id)
 );
 
-create table blocks (
+create table if not exists blocks (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references projects(id) on delete cascade,
   owner text not null check (owner in ('client','authority','consultant','contractor','internal')),
@@ -93,7 +105,7 @@ create table blocks (
   cleared_on date
 );
 
-create table events (
+create table if not exists events (
   id bigserial primary key,
   project_id uuid not null references projects(id) on delete cascade,
   substage_id uuid references substages(id),
@@ -103,13 +115,21 @@ create table events (
   at timestamptz not null default now()
 );
 
-create index on project_substage (project_id);
-create index on events (project_id, at desc);
-create index on assignments (person_id);
+create index if not exists project_substage_project_id_idx
+  on project_substage (project_id);
+create index if not exists events_project_id_at_idx
+  on events (project_id, at desc);
+create index if not exists assignments_person_id_idx
+  on assignments (person_id);
 
 -- Not in the spec's SQL, but the taxonomy is looked up by (stage_group, name)
 -- during seeding and by seq on every board read.
-create index on substages (stage_group_id, seq);
-create index on deliverables (substage_id, seq);
+create index if not exists substages_stage_group_id_seq_idx
+  on substages (stage_group_id, seq);
+create index if not exists deliverables_substage_id_seq_idx
+  on deliverables (substage_id, seq);
+
+insert into schema_migrations (version) values ('0001_schema')
+  on conflict (version) do nothing;
 
 commit;

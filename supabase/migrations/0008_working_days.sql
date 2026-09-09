@@ -53,4 +53,7 @@ revoke all on function planned_working_days(numeric) from public, anon;
 grant execute on function working_days(date, date) to authenticated;
 grant execute on function planned_working_days(numeric) to authenticated;
 
+insert into schema_migrations (version) values ('0008_working_days')
+  on conflict (version) do nothing;
+
 commit;

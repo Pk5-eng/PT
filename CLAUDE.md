@@ -66,6 +66,15 @@ between other tasks, not people who will learn a tool.
 7. **`ensure_project_structure()` is the only definition of which sections a project gets.**
    The new-project form, the seed and the backfill all call it. Never reimplement that rule in
    the browser.
+8. **Every migration is idempotent, and a new one that is not is a bug.** There is no
+   migration runner and by the constraints above there cannot be one, so applying a migration
+   is a person pasting `ALL_MIGRATIONS.sql` into the SQL editor. That is only safe if the
+   whole file is safe to paste from any state, so: `create table if not exists`,
+   `create or replace function`, `drop policy if exists` before `create policy`, and
+   `drop view if exists` before `create view` — never `create or replace view`, which cannot
+   change a view's column list and will fail the moment a later migration reshapes it. Data a
+   migration writes uses `on conflict do nothing`. `npm run test:converge` enforces this; never
+   add a migration without running it.
 
 ## Product principles
 
