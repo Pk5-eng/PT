@@ -11,5 +11,7 @@ dev-dist/
 # Local verification harness: renders real components against fixture data.
 # Regenerated on demand; not part of the app.
 .fixtures/
+.devmock/
 verify.html
 vite.verify.config.js
+vite.mock.config.js

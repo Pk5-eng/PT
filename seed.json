@@ -18,10 +18,10 @@
       "name": "DESIGN DEVELOPMENT"
     },
     {
-      "name": "FOUNDATION DWGS"
+      "name": "FOUNDATION DRAWINGS"
     },
     {
-      "name": "ELEVATION DESIGNING"
+      "name": "ELEVATION DESIGN"
     },
     {
       "name": "GFC - ARCHITECTURE"
@@ -84,7 +84,7 @@
     },
     {
       "name": "STRUCTURAL DRAWINGS TILL PLINTH",
-      "group": "FOUNDATION DWGS",
+      "group": "FOUNDATION DRAWINGS",
       "seq": 4,
       "planned_weeks": "NA",
       "deliverables": [
@@ -98,7 +98,7 @@
     },
     {
       "name": "ELEVATION FINALISATION",
-      "group": "ELEVATION DESIGNING",
+      "group": "ELEVATION DESIGN",
       "seq": 5,
       "planned_weeks": 3,
       "deliverables": [
@@ -107,7 +107,7 @@
     },
     {
       "name": "SECONDARY ELEVATION",
-      "group": "ELEVATION DESIGNING",
+      "group": "ELEVATION DESIGN",
       "seq": 6,
       "planned_weeks": 3,
       "deliverables": [
@@ -117,13 +117,13 @@
         "Detailed Architectural Elevations as per selected elevation",
         "Revised MEP drawing as per new elevation",
         "Revised deviation drawing as per elevation",
-        "Detailed Fa\u00e7ade wall sections - 1:20",
+        "Detailed Façade wall sections - 1:20",
         "Parapet coping details"
       ]
     },
     {
       "name": "STAIRCASE DESIGNING",
-      "group": "ELEVATION DESIGNING",
+      "group": "ELEVATION DESIGN",
       "seq": 7,
       "planned_weeks": 1.5,
       "deliverables": [
@@ -133,7 +133,7 @@
     },
     {
       "name": "NIGHT RENDERS",
-      "group": "ELEVATION DESIGNING",
+      "group": "ELEVATION DESIGN",
       "seq": 8,
       "planned_weeks": 1,
       "deliverables": [
@@ -250,6 +250,34 @@
       "seq": 20,
       "planned_weeks": null,
       "deliverables": []
+    },
+    {
+      "name": "CIVIL DRAWINGS",
+      "group": "ID-DESIGN DEVELOPMENT",
+      "seq": 21,
+      "planned_weeks": null,
+      "deliverables": []
+    },
+    {
+      "name": "COMPONENT DRAWINGS & COORDINATION",
+      "group": "ID-DESIGN DEVELOPMENT",
+      "seq": 22,
+      "planned_weeks": null,
+      "deliverables": []
+    },
+    {
+      "name": "MATERIAL SELECTION",
+      "group": "ID-DESIGN DEVELOPMENT",
+      "seq": 23,
+      "planned_weeks": null,
+      "deliverables": []
+    },
+    {
+      "name": "SERVICES DRAWING",
+      "group": "ID-DESIGN DEVELOPMENT",
+      "seq": 24,
+      "planned_weeks": null,
+      "deliverables": []
     }
   ],
   "projects": [
@@ -306,35 +334,35 @@
           "note": null
         },
         {
-          "group": "FOUNDATION DWGS",
+          "group": "FOUNDATION DRAWINGS",
           "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "SECONDARY ELEVATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "STAIRCASE DESIGNING",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "NIGHT RENDERS",
           "status": "done",
           "concluded_on": null,
@@ -461,35 +489,35 @@
           "note": null
         },
         {
-          "group": "FOUNDATION DWGS",
+          "group": "FOUNDATION DRAWINGS",
           "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "SECONDARY ELEVATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "STAIRCASE DESIGNING",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "NIGHT RENDERS",
           "status": "done",
           "concluded_on": null,
@@ -566,14 +594,14 @@
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "done",
           "concluded_on": "2026-03-19",
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "SECONDARY ELEVATION",
           "status": "in_process",
           "concluded_on": null,
@@ -629,21 +657,21 @@
           "note": null
         },
         {
-          "group": "FOUNDATION DWGS",
+          "group": "FOUNDATION DRAWINGS",
           "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "NIGHT RENDERS",
           "status": "in_process",
           "concluded_on": null,
@@ -733,35 +761,35 @@
           "note": null
         },
         {
-          "group": "FOUNDATION DWGS",
+          "group": "FOUNDATION DRAWINGS",
           "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "SECONDARY ELEVATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "STAIRCASE DESIGNING",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "NIGHT RENDERS",
           "status": "done",
           "concluded_on": null,
@@ -817,7 +845,7 @@
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "in_process",
           "concluded_on": null,
@@ -934,21 +962,21 @@
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "unknown",
           "concluded_on": "2026-03-25",
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "SECONDARY ELEVATION",
           "status": "unknown",
           "concluded_on": "2026-03-27",
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "STAIRCASE DESIGNING",
           "status": "unknown",
           "concluded_on": "2026-08-19",
@@ -1031,14 +1059,14 @@
           "note": null
         },
         {
-          "group": "FOUNDATION DWGS",
+          "group": "FOUNDATION DRAWINGS",
           "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
           "status": "in_process",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "in_process",
           "concluded_on": null,
@@ -1086,14 +1114,14 @@
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "unknown",
           "concluded_on": "2026-07-09",
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "STAIRCASE DESIGNING",
           "status": "in_process",
           "concluded_on": null,
@@ -1170,35 +1198,35 @@
           "note": null
         },
         {
-          "group": "FOUNDATION DWGS",
+          "group": "FOUNDATION DRAWINGS",
           "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "SECONDARY ELEVATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "STAIRCASE DESIGNING",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "NIGHT RENDERS",
           "status": "done",
           "concluded_on": null,
@@ -1541,35 +1569,35 @@
           "note": null
         },
         {
-          "group": "FOUNDATION DWGS",
+          "group": "FOUNDATION DRAWINGS",
           "substage": "STRUCTURAL DRAWINGS TILL PLINTH",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "ELEVATION FINALISATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "SECONDARY ELEVATION",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "STAIRCASE DESIGNING",
           "status": "done",
           "concluded_on": null,
           "note": null
         },
         {
-          "group": "ELEVATION DESIGNING",
+          "group": "ELEVATION DESIGN",
           "substage": "NIGHT RENDERS",
           "status": "done",
           "concluded_on": null,

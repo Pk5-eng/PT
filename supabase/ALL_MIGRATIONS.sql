@@ -567,3 +567,133 @@ create trigger trg_stamp_deliverable
   for each row execute function stamp_deliverable();
 
 commit;
+
+-- ############################################################################
+-- ## 0008_working_days.sql
+-- ############################################################################
+
+-- 0008_working_days.sql
+--
+-- The studio does not work on Sundays, so a duration measured in calendar days
+-- overstates every piece of work by roughly a seventh. Asked for explicitly:
+-- "in the calculation of total days spent on a project do not include sundays".
+--
+-- This is deliberately one function rather than a rule applied in three places.
+-- The board, the project screen and the analytics screen must never disagree
+-- about how long something has taken, and the only way to guarantee that is for
+-- all three to read the same number out of the same view.
+--
+-- Counting, not eyeballing: the number of Sundays in (a, b] is the difference of
+-- two floor-divisions anchored on a known Sunday. 2000-01-02 was a Sunday.
+-- floor() on numeric behaves correctly for dates before the anchor; integer `/`
+-- in Postgres truncates towards zero and would be wrong there, so the division
+-- is done in numeric on purpose.
+--
+--   working_days('2026-09-07', '2026-09-14') = 7 - 1 = 6   (one Sunday between)
+--
+-- IMMUTABLE, and therefore usable inside a view and an index. It reads no table
+-- and no clock: the caller passes current_date in, it is never read in here.
+
+begin;
+
+create or replace function working_days(from_date date, to_date date)
+returns int as $$
+  select case
+    when from_date is null or to_date is null then null
+    else (to_date - from_date)
+       - ( floor((to_date   - date '2000-01-02') / 7.0)::int
+         - floor((from_date - date '2000-01-02') / 7.0)::int )
+  end;
+$$ language sql immutable;
+
+comment on function working_days(date, date) is
+  'Elapsed days from from_date to to_date, excluding Sundays. The studio''s '
+  'working week is six days, so this is the only day count the app shows.';
+
+-- A planned duration is quoted in weeks and must be compared against a working
+-- day count, not a calendar one, or every substage would look late by a day a
+-- week. Six working days to the week.
+create or replace function planned_working_days(weeks numeric)
+returns int as $$
+  select case when weeks is null then null else round(weeks * 6)::int end;
+$$ language sql immutable;
+
+comment on function planned_working_days(numeric) is
+  'A planned duration in weeks, expressed in working days (6 per week) so it is '
+  'comparable with working_days().';
+
+revoke all on function working_days(date, date) from public, anon;
+revoke all on function planned_working_days(numeric) from public, anon;
+grant execute on function working_days(date, date) to authenticated;
+grant execute on function planned_working_days(numeric) to authenticated;
+
+commit;
+
+-- ############################################################################
+-- ## 0009_sections_and_delivery.sql
+-- ############################################################################
+
+-- 0009_sections_and_delivery.sql
+--
+-- Two dates the studio asked to be able to set, and one thing it asked to stop
+-- seeing.
+--
+-- 1. A deadline per SECTION. The project screen is read by stage group -
+--    "concept development", "GFC - architecture" - and that is the level a
+--    principal commits to a client at. Until now the only authorable date was
+--    project_substage.target_date, one per substage, which is a finer grain than
+--    anyone actually promises anything at.
+--
+--    This does not violate CLAUDE.md rule 2. That rule governs started_on and
+--    concluded_on, which are records of what happened and stay stamped by the
+--    trigger. A deadline is a plan, not a record, and a plan has to be typed by
+--    a person because nothing else knows it. Same reasoning as migration 0004.
+--
+-- 2. An expected delivery date per PROJECT, captured when the project is created.
+--
+-- 3. Blocks. "Blocked by" is removed from the product. The table and its rows
+--    are deliberately NOT dropped: it holds real history, dropping it is
+--    irreversible, and nothing in the app reads it after migration 0012. If the
+--    studio is sure, `drop table blocks` is a one-line follow-up; it is not
+--    something this migration should decide on its behalf.
+
+begin;
+
+-- ------------------------------------------------------------------ sections
+create table if not exists project_stage_group (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references projects(id) on delete cascade,
+  stage_group_id uuid not null references stage_groups(id),
+  target_date date,
+  unique (project_id, stage_group_id)
+);
+
+comment on table project_stage_group is
+  'One row per project per section, holding the deadline the studio set for it. '
+  'A row exists only once someone has set a date; absence means no deadline.';
+
+create index if not exists project_stage_group_project_idx
+  on project_stage_group (project_id);
+
+alter table project_stage_group enable row level security;
+
+drop policy if exists read_all  on project_stage_group;
+drop policy if exists write_any on project_stage_group;
+drop policy if exists edit_any  on project_stage_group;
+drop policy if exists del_any   on project_stage_group;
+
+create policy read_all  on project_stage_group for select to authenticated using (true);
+create policy write_any on project_stage_group for insert to authenticated with check (true);
+create policy edit_any  on project_stage_group for update to authenticated using (true) with check (true);
+-- Clearing a deadline is removing a plan, not losing history, so a delete is
+-- allowed here for the same reason it is on assignments.
+create policy del_any   on project_stage_group for delete to authenticated using (true);
+
+-- ------------------------------------------------------------------ delivery
+alter table projects add column if not exists target_delivery date;
+
+comment on column projects.target_delivery is
+  'When the project is expected to be delivered. Set on the new-project form and '
+  'editable afterwards. A plan, so a person types it; see 0004.';
+
+commit;

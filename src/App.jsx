@@ -4,8 +4,17 @@ import { sortRows, summarise, matches, FOCUS } from './lib/board.js';
 import Board from './components/Board.jsx';
 import SignIn from './components/SignIn.jsx';
 import ProjectDetail from './components/ProjectDetail.jsx';
-import { useRoute, toBoard } from './lib/route.js';
-import { Search, X, Alert, Ban, Folder, Dashed, LogOut, Inbox } from './components/Icons.jsx';
+import Analytics from './components/Analytics.jsx';
+import ProjectPanel from './components/ProjectPanel.jsx';
+import { useRoute, toBoard, toAnalytics, toProject } from './lib/route.js';
+import {
+  Search, X, Alert, Folder, Dashed, LogOut, Inbox, Plus, ChartIcon, Rocket, Clock,
+} from './components/Icons.jsx';
+
+/* A stable empty array. Passed as `team` when creating, where there is no team
+   yet: a fresh [] on every render would change ProjectPanel's effect identity
+   and reset the half-filled form under the user. */
+const NO_TEAM = [];
 
 const TYPES = [
   ['', 'All'],
@@ -20,13 +29,18 @@ const TYPES = [
  * that stops a tool being used; clicking the number is the whole interaction.
  * Exactly one can be on at a time, so the board is never quietly filtered by
  * two things at once.
+ *
+ * "Blocked" used to be one of these and is gone with the rest of that feature.
+ * "Delivering soon" replaces it, off the delivery date the new-project form now
+ * captures - a forward-looking number where the old one was a backward-looking
+ * excuse.
  */
 function Cards({ totals, focus, setFocus }) {
   const cards = [
     { key: 'live', n: totals.live, label: 'Live projects', Icon: Folder },
-    { key: 'late', n: totals.late, label: 'Past plan or target', Icon: Alert, warn: true },
-    { key: 'blocked', n: totals.blocked, label: 'Blocked', Icon: Ban, warn: true },
-    { key: 'untracked', n: totals.untracked, label: 'No stages tracked', Icon: Dashed },
+    { key: 'late', n: totals.late, label: 'Past plan or deadline', Icon: Alert, warn: true },
+    { key: 'soon', n: totals.soon, label: 'Delivering within 4 weeks', Icon: Rocket },
+    { key: 'idle', n: totals.idle, label: 'Nothing started yet', Icon: Dashed },
   ];
   return (
     <div className="cards">
@@ -36,7 +50,7 @@ function Cards({ totals, focus, setFocus }) {
           <button
             key={key}
             type="button"
-            className={`card${warn && n > 0 ? ' warn' : ''}`}
+            className={`card c-${key}${warn && n > 0 ? ' warn' : ''}`}
             aria-pressed={on}
             onClick={() => setFocus(on ? null : key)}
             title={on ? 'Show all projects again' : `Show only these ${n}`}
@@ -55,8 +69,10 @@ export default function App() {
   const [session, setSession] = useState(undefined); // undefined = still checking
   const [rows, setRows] = useState(null);
   const [teams, setTeams] = useState({});
-  const [people, setPeople] = useState([]);
+  const [people, setPeople] = useState([]);          // {id, name} for the form
+  const [names, setNames] = useState([]);            // names only, for the filter
   const [error, setError] = useState(null);
+  const [creating, setCreating] = useState(false);
   const route = useRoute();
 
   const [query, setQuery] = useState('');
@@ -78,25 +94,28 @@ export default function App() {
     // changes. Harmless to call again on every load.
     await supabase.rpc('link_my_identity');
 
-    const [board, assign] = await Promise.all([
+    const [board, assign, roster] = await Promise.all([
       supabase.from('v_board').select('*'),
       supabase.from('assignments').select('project_id, role_code, people(name)'),
+      supabase.from('people').select('id, name').eq('active', true).order('name'),
     ]);
 
     if (board.error) return setError(board.error.message);
     if (assign.error) return setError(assign.error.message);
+    if (roster.error) return setError(roster.error.message);
     setError(null);
 
     const byProject = {};
-    const names = new Set();
+    const seen = new Set();
     for (const a of assign.data) {
       const name = a.people?.name;
       if (!name) continue;
-      names.add(name);
+      seen.add(name);
       (byProject[a.project_id] ||= []).push({ name, role: a.role_code });
     }
     setTeams(byProject);
-    setPeople([...names].sort());
+    setNames([...seen].sort());
+    setPeople(roster.data);
     setRows(board.data);
   }, []);
 
@@ -105,17 +124,25 @@ export default function App() {
     load();
   }, [session, load]);
 
-  // "/" focuses search, Escape clears it. Both are muscle memory from every
-  // other tool these people use, and neither needs to be discovered.
+  // "/" focuses search, "n" opens the new-project panel, Escape clears search.
+  // All three are muscle memory from every other tool these people use.
+  //
+  // Bound only on the board, because the board is the only route that renders
+  // the panel: bound everywhere, "n" pressed on a project screen would arm a
+  // panel that appears later, out of nowhere, on the way back.
+  const onBoard = route.name === 'board';
   useEffect(() => {
+    if (!onBoard) return;
     const on = (e) => {
       const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === '/' && !typing) { e.preventDefault(); searchRef.current?.focus(); }
+      if (e.key === 'n' && !typing) { e.preventDefault(); setCreating(true); }
       if (e.key === 'Escape' && typing) { setQuery(''); e.target.blur(); }
     };
     window.addEventListener('keydown', on);
     return () => window.removeEventListener('keydown', on);
-  }, []);
+  }, [onBoard]);
 
   // Scoped = search, type and person. The card numbers are computed from this,
   // so they do not move when you click one of them.
@@ -152,20 +179,46 @@ export default function App() {
   if (route.name === 'project') {
     return <ProjectDetail projectId={route.projectId} onBack={() => { toBoard(); load(); }} />;
   }
+  if (route.name === 'analytics') {
+    return (
+      <>
+        <div className="appbar">
+          <div className="inner">
+            <span className="mark"><span className="glyph">KA</span><span className="word">Projects</span></span>
+            <span className="spacer" />
+            <button className="btn ghost" onClick={() => supabase.auth.signOut()}
+                    title="Sign out" aria-label="Sign out">
+              <LogOut size={15} /><span className="full">Sign out</span>
+            </button>
+          </div>
+        </div>
+        <Analytics onBack={() => { toBoard(); load(); }} />
+      </>
+    );
+  }
 
   return (
     <>
       <div className="appbar">
         <div className="inner">
-          <span className="mark"><span className="glyph">KA</span>Projects</span>
+          <span className="mark"><span className="glyph">KA</span><span className="word">Projects</span></span>
           <span className="count num">
             {rows ? (visible.length === rows.length
               ? `${rows.length} projects`
               : `${visible.length} of ${rows.length}`) : ''}
           </span>
           <span className="spacer" />
-          <button className="btn ghost" onClick={() => supabase.auth.signOut()}>
-            <LogOut size={15} />Sign out
+          <button className="btn ghost" onClick={toAnalytics} title="The numbers"
+                  aria-label="The numbers">
+            <ChartIcon size={15} /><span className="full">Numbers</span>
+          </button>
+          <button className="btn primary" onClick={() => setCreating(true)}
+                  title="New project" aria-label="New project">
+            <Plus size={15} /><span className="full">New project</span><span className="kbd">n</span>
+          </button>
+          <button className="btn ghost icon" onClick={() => supabase.auth.signOut()} title="Sign out"
+                  aria-label="Sign out">
+            <LogOut size={15} />
           </button>
         </div>
       </div>
@@ -200,12 +253,13 @@ export default function App() {
           <select className="select" value={person} onChange={(e) => setPerson(e.target.value)}
                   aria-label="Filter by person">
             <option value="">Anyone</option>
-            {people.map((p) => <option key={p} value={p}>{p}</option>)}
+            {names.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
 
           <select className="select" value={sort} onChange={(e) => setSort(e.target.value)}
                   aria-label="Sort the board">
             <option value="overrun">Most overdue first</option>
+            <option value="delivery">Delivering soonest</option>
             <option value="name">Name, A–Z</option>
             <option value="stage">Stage order</option>
           </select>
@@ -245,7 +299,22 @@ export default function App() {
         {rows && visible.length > 0 && (
           <Board rows={visible} teams={teams} sort={sort} setSort={setSort} />
         )}
+
+        <p className="foot">
+          <Clock size={13} />
+          Every day figure counts working days. Sundays are excluded, and a plan quoted
+          in weeks is read as six days to the week.
+        </p>
       </div>
+
+      <ProjectPanel
+        open={creating}
+        project={null}
+        people={people}
+        team={NO_TEAM}
+        onClose={() => setCreating(false)}
+        onSaved={async (id) => { setCreating(false); await load(); toProject(id); }}
+      />
     </>
   );
 }

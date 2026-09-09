@@ -59,3 +59,98 @@ update project_substage set status = 'done' where id in (select id from t2);
 update project_substage set status = 'in_process' where id in (select id from t2);
 select target_date is not null as target_survived, concluded_on is null as concluded_cleared
 from project_substage where id in (select id from t2);
+
+-- ===========================================================================
+-- Added with the working-day change, the section deadlines and the structure
+-- backfill. Everything below is new behaviour from migrations 0008-0012.
+-- ===========================================================================
+
+\echo '--- WORKING DAYS: the same cases test/js/workdays.test.mjs asserts in JS ---'
+-- If these two suites ever disagree, the board and the analytics screen are
+-- reporting different durations for the same work and one of them is lying.
+select
+  working_days('2026-09-07','2026-09-14') = 6   as mon_to_mon_is_six,
+  working_days('2026-09-06','2026-09-13') = 6   as sun_to_sun_is_six,
+  working_days('2026-09-05','2026-09-12') = 6   as sat_to_sat_is_six,
+  working_days('2026-09-07','2026-10-05') = 24  as four_weeks_is_24,
+  working_days('2026-09-07','2026-09-12') = 5   as within_one_week_loses_none,
+  working_days('2026-09-12','2026-09-14') = 1   as over_one_sunday_loses_one,
+  working_days('2026-09-07','2026-09-07') = 0   as same_day_is_zero,
+  working_days('2026-09-14','2026-09-07') = -6  as backwards_is_negative,
+  working_days('1999-12-20','1999-12-27') = 6   as before_the_anchor_still_right,
+  working_days(null,'2026-09-14') is null       as null_in_null_out,
+  planned_working_days(1.5) = 9                 as plan_is_six_days_a_week;
+
+\echo '--- WORKING DAYS: a year loses 52 or 53 days, never more ---'
+select 365 - working_days('2025-01-01','2026-01-01') as sundays_in_2025;
+
+\echo '--- STRUCTURE: every live project carries the full section list ---'
+select
+  count(*) filter (where n = 0) as projects_with_no_structure,
+  min(n) as fewest_rows, max(n) as most_rows
+from (
+  select p.id, count(ps.id) as n
+  from projects p
+  left join project_substage ps on ps.project_id = p.id
+  where p.status not in ('cancelled','completed')
+  group by p.id
+) s;
+
+\echo '--- STRUCTURE: scope follows discipline, and it is a default not a verdict ---'
+select p.type,
+       count(*) filter (where ps.status = 'not_in_scope') as marked_out_of_scope,
+       count(*) filter (where ps.status <> 'not_in_scope') as in_scope
+from projects p
+join project_substage ps on ps.project_id = p.id
+join substages s on s.id = ps.substage_id
+join stage_groups sg on sg.id = s.stage_group_id
+where sg.name in ('ID-DESIGN DEVELOPMENT','GFC-ID')
+group by p.type order by p.type;
+
+\echo '--- STRUCTURE: re-running the function adds nothing and changes nothing ---'
+create temp table before_run as select id, status, started_on from project_substage;
+select sum(ensure_project_structure(id)) as rows_added_on_second_run from projects;
+select count(*) = 0 as nothing_was_modified
+from project_substage ps join before_run b on b.id = ps.id
+where ps.status is distinct from b.status or ps.started_on is distinct from b.started_on;
+
+\echo '--- BOARD: days are working days, and a plan is six days to the week ---'
+-- Take one substage, start it exactly two calendar weeks ago, and check the
+-- view reports twelve days rather than fourteen.
+create temp table t3 as
+  select ps.id, ps.project_id from project_substage ps
+  join substages s on s.id = ps.substage_id
+  where s.planned_weeks = 3 limit 1;
+update project_substage set status = 'in_process' where id in (select id from t3);
+update project_substage set started_on = current_date - 14 where id in (select id from t3);
+select days_in_substage = 12 as sundays_excluded,
+       planned_days = 18     as plan_in_working_days
+from v_board
+where id = (select project_id from t3) and started_on = current_date - 14;
+
+\echo '--- BOARD: blocked_by is gone, and the new columns are present ---'
+select
+  (select count(*) from information_schema.columns
+    where table_name='v_board' and column_name='blocked_by') as blocked_by_columns,
+  (select count(*) from information_schema.columns
+    where table_name='v_board'
+      and column_name in ('target_delivery','days_to_delivery','section_target',
+                          'days_past_section','in_scope_count','started_count',
+                          'planned_days')) as new_columns;
+
+\echo '--- SECTION DEADLINE: a section deadline reaches the board as days_past_section ---'
+insert into project_stage_group (project_id, stage_group_id, target_date)
+select ps.project_id, s.stage_group_id, current_date - 10
+from project_substage ps join substages s on s.id = ps.substage_id
+where ps.id in (select id from t3)
+on conflict (project_id, stage_group_id) do update set target_date = excluded.target_date;
+
+select days_past_section, days_past_section = working_days(current_date - 10, current_date)
+         as counted_in_working_days
+from v_board where id = (select project_id from t3);
+
+\echo '--- SECTION DEADLINE: clearing it sets null rather than deleting history ---'
+update project_stage_group set target_date = null
+where project_id = (select project_id from t3);
+select count(*) = 1 as row_kept, bool_and(target_date is null) as date_cleared
+from project_stage_group where project_id = (select project_id from t3);

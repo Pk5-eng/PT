@@ -44,13 +44,28 @@ between other tasks, not people who will learn a tool.
 
 1. **`events` is append-only.** Every substage status change writes a row via the database
    trigger. Never update or delete an events row. All duration and stall metrics derive from it.
-2. **Dates are never typed by a user.** `started_on` and `concluded_on` are stamped by the
-   trigger. The old spreadsheet had six dates in total because manual date entry does not happen.
+2. **A date that records something is never typed by a user.** `started_on` and `concluded_on`
+   are stamped by the trigger. The old spreadsheet had six dates in total because manual date
+   entry does not happen. Three dates are typed, and all three are *plans* rather than records:
+   `project_substage.target_date`, `project_stage_group.target_date` (the section deadline) and
+   `projects.target_delivery`. Nothing but a person knows a promise. Adding a fourth authorable
+   date needs the same justification.
 3. **Substages, stage groups and deliverables are never deleted.** Archive with `active = false`.
    Deleting one silently destroys duration history.
 4. **A substage never changes stage group** once it has project data. Create a new one instead.
 5. **Colour is decoration.** Every status must be readable as text. The tool exists because the
-   previous system stored meaning in colour alone.
+   previous system stored meaning in colour alone. The palette is deliberately lively, which
+   raises the stakes on this rule rather than relaxing it: nothing on screen carries a colour
+   without also carrying a word, charts included. Every figure on the analytics screen has a
+   table twin behind its "Numbers" toggle for the same reason.
+6. **Sundays are not days of work.** Every duration anywhere in the app - board, project screen,
+   analytics - comes from `working_days()` (migration 0008) or its JavaScript twin in
+   `src/lib/workdays.js`, both of which exclude Sundays. A plan quoted in weeks is read as six
+   working days to the week, not seven. Two screens that disagree about how long something has
+   taken are worse than either number, so both suites assert the same cases.
+7. **`ensure_project_structure()` is the only definition of which sections a project gets.**
+   The new-project form, the seed and the backfill all call it. Never reimplement that rule in
+   the browser.
 
 ## Product principles
 
@@ -59,7 +74,9 @@ between other tasks, not people who will learn a tool.
 - **No percent complete.** It is always back-derived from the fee stage and always fiction.
 - **Show the gaps.** Twenty of 37 projects have no stage data. They appear on the board as
   "Not set". Never hide an empty row.
-- **Four screens plus admin settings.** Board, Project detail, New project, Team load, Settings.
+- **Four screens.** Board, Project detail, Analytics ("The numbers", which carries team
+  load), and the new-project / edit panel that slides over any of them. Admin settings are
+  still unbuilt; the taxonomy is edited in Supabase for now.
 - **The board shows the substage that is stuck, not the first one.** 10 of 17 active projects run
   several substages at once, so a row reports the most overdue and counts the rest as "+N more".
 
@@ -68,3 +85,8 @@ between other tasks, not people who will learn a tool.
 Gantt charts, percent complete, time tracking, client login, file storage, notifications,
 invoicing, fee tracking, PWA install and offline support. Do not add these and do not scaffold
 for them.
+
+**"Blocked by" was removed from the product**, at the studio's request. The `blocks` table and
+every row in it still exist; nothing reads them after migration 0012. Do not re-add the
+feature, and do not drop the table on your own initiative either - that is history, and
+dropping it is irreversible.

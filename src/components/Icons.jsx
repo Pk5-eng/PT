@@ -119,3 +119,51 @@ export const Inbox = (p) => (
     <path d="M5.5 5.5h13l2.5 6.5v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6l2.5-6.5Z" />
   </Svg>
 );
+
+/* --- added for the analytics screen and the project form --- */
+
+/** The table twin behind every figure. */
+export const Table = (p) => (
+  <Svg {...p}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M3 9.5h18M9 9.5V20" />
+  </Svg>
+);
+
+export const ChartIcon = (p) => (
+  <Svg {...p}>
+    <path d="M4 20V5" /><path d="M4 20h16" />
+    <rect x="7.5" y="12" width="3.2" height="5" rx="1" />
+    <rect x="13.5" y="8" width="3.2" height="9" rx="1" />
+  </Svg>
+);
+
+export const Plus = (p) => (
+  <Svg {...p}><path d="M12 5v14M5 12h14" /></Svg>
+);
+
+export const Pencil = (p) => (
+  <Svg {...p}>
+    <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m14.5 6.5 3 3" />
+  </Svg>
+);
+
+/** A deadline. Sits beside the word "deadline", never instead of it. */
+export const Calendar = (p) => (
+  <Svg {...p}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M3 10h18M8 3v4M16 3v4" />
+  </Svg>
+);
+
+export const TrendIcon = (p) => (
+  <Svg {...p}><path d="M3 16.5 9 10l4 4 7.5-8" /><path d="M15 6h6v6" /></Svg>
+);
+
+export const Rocket = (p) => (
+  <Svg {...p}>
+    <path d="M13.5 3.5c3.8.4 6.6 3.2 7 7l-6 6-7-7 6-6Z" />
+    <circle cx="14.5" cy="9.5" r="1.6" />
+    <path d="M7.5 16.5 4 20M9.5 13.5 4.5 15M10.5 18.5 9 21" />
+  </Svg>
+);

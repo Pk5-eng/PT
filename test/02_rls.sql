@@ -75,3 +75,76 @@ update substages set active=false where name='ADMIN TEST';
 select expect('admin can archive a substage', (select not active from substages where name='ADMIN TEST'));
 select refused('even an admin cannot delete a substage', 'delete from substages where name=''ADMIN TEST''');
 reset role;
+
+\echo ''
+\echo '=== section deadlines and project creation (added with 0009 and 0011) ==='
+set role authenticated;
+select test_become('22222222-2222-2222-2222-222222222222');
+
+-- A member sets a deadline. It is a plan, so unlike started_on it is theirs to
+-- author; the same reasoning as project_substage.target_date in 0004.
+-- Scoped to one named project, because 01_behaviour.sql already left a row here.
+create temp table dl as select id from projects where name = 'Kanota Jaipur';
+
+insert into project_stage_group (project_id, stage_group_id, target_date)
+values ((select id from dl), (select id from stage_groups order by seq limit 1), current_date + 30);
+select expect('member can set a section deadline',
+  (select target_date = current_date + 30 from project_stage_group
+    where project_id = (select id from dl)));
+
+update project_stage_group set target_date = null where project_id = (select id from dl);
+select expect('member can clear a section deadline without losing the row',
+  (select count(*) = 1 and bool_and(target_date is null) from project_stage_group
+    where project_id = (select id from dl)));
+
+delete from project_stage_group where project_id = (select id from dl);
+select expect('member can remove a section deadline entirely',
+  (select count(*) = 0 from project_stage_group where project_id = (select id from dl)));
+
+-- Creating a project is everyday work: the form does exactly this.
+insert into projects (name, type, target_delivery) values ('RLS TEST PROJECT', 'AR', current_date + 90);
+select expect('member can create a project with a delivery date',
+  (select count(*) = 1 from projects where name = 'RLS TEST PROJECT'));
+
+select expect('and its full section structure comes back from the function',
+  (select ensure_project_structure((select id from projects where name = 'RLS TEST PROJECT')) > 20));
+
+select expect('an AR project gets architecture in scope and interiors out of it',
+  (select bool_and(case when sg.name in ('ID-DESIGN DEVELOPMENT','GFC-ID')
+                        then ps.status = 'not_in_scope'
+                        else ps.status = 'not_started' end)
+     from project_substage ps
+     join substages s on s.id = ps.substage_id
+     join stage_groups sg on sg.id = s.stage_group_id
+     where ps.project_id = (select id from projects where name = 'RLS TEST PROJECT')));
+
+select expect('creating the structure wrote no events',
+  (select count(*) = 0 from events
+    where project_id = (select id from projects where name = 'RLS TEST PROJECT')));
+
+-- A project is closed by a status change, never by disappearing: deleting one
+-- would take its events with it through the cascade.
+--
+-- Note how this is asserted. There is no delete policy on projects, and RLS
+-- enforces that by making the rows invisible to the delete rather than by
+-- raising - so the statement succeeds and removes nothing. Checking for an
+-- exception here would pass for the wrong reason on any future day when a
+-- permissive policy is added, because a policy that allows the delete also
+-- raises no exception. The row surviving is the thing that actually matters.
+delete from projects where name = 'RLS TEST PROJECT';
+select expect('a member''s delete removes no project',
+  (select count(*) = 1 from projects where name = 'RLS TEST PROJECT'));
+select expect('and its substages are still there',
+  (select count(*) > 20 from project_substage
+    where project_id = (select id from projects where name = 'RLS TEST PROJECT')));
+reset role;
+
+\echo ''
+\echo '=== an anonymous visitor still sees none of it ==='
+set role anon;
+select test_become(null);
+select expect('anon sees no section deadlines', (select count(*) = 0 from project_stage_group));
+select refused('anon cannot set a section deadline',
+  'insert into project_stage_group (project_id, stage_group_id, target_date)
+     values ((select id from projects limit 1), (select id from stage_groups limit 1), current_date)');
+reset role;
