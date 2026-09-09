@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js';
 import { PROJECT_STATUSES, ROLES } from '../lib/format.js';
 import { X, Check, Alert, Users, Calendar, Plus } from './Icons.jsx';
 import { isSchemaBehind, MIGRATION_FILE } from '../lib/schema.js';
+import { changedFields, diffAssignments, isNoop } from '../lib/save.js';
 
 /**
  * The panel that slides in from the right to create a project, and the same
@@ -130,8 +131,15 @@ export default function ProjectPanel({ open, project, people, team, onClose, onS
     let projectId = project?.id;
 
     if (editing) {
-      const { error } = await supabase.from('projects').update(payload).eq('id', projectId);
-      if (error) { setBusy(false); return setError(saveError(error)); }
+      // Only the fields this person actually changed. Sending the whole row
+      // would put back whatever a colleague edited while this panel was open,
+      // silently and with nothing in the events log to show it happened -
+      // events only record substage status changes.
+      const patch = changedFields(project, payload);
+      if (Object.keys(patch).length > 0) {
+        const { error } = await supabase.from('projects').update(patch).eq('id', projectId);
+        if (error) { setBusy(false); return setError(saveError(error)); }
+      }
     } else {
       const { data, error } = await supabase.from('projects').insert(payload).select('id').single();
       if (error) { setBusy(false); return setError(saveError(error)); }
@@ -147,16 +155,37 @@ export default function ProjectPanel({ open, project, people, team, onClose, onS
       }
     }
 
-    // Assignments are replaced rather than diffed. There are at most ten people
-    // and a delete-then-insert is one round trip each; a diff would be more
-    // code for a result nobody can tell apart.
-    const wanted = Object.entries(members);
-    const del = await supabase.from('assignments').delete().eq('project_id', projectId);
-    if (del.error) { setBusy(false); return setError(saveError(del.error)); }
-    if (wanted.length > 0) {
-      const ins = await supabase.from('assignments').insert(
-        wanted.map(([person_id, role_code]) => ({ project_id: projectId, person_id, role_code })));
-      if (ins.error) { setBusy(false); return setError(saveError(ins.error)); }
+    // The team, as a diff.
+    //
+    // This used to delete every assignment and re-insert the wanted set. That
+    // has a window in the middle where the project has no team at all, and if
+    // the insert failed - a dropped connection, a closed laptop - it stayed
+    // that way with nothing to say so. Losing a project's team silently is a
+    // worse outcome than any failure this form can otherwise produce.
+    //
+    // Now: people who left are deleted, people who joined are inserted, and a
+    // changed role is an update, so an existing row keeps its id. A save that
+    // changes nobody opens no connection at all.
+    const d = diffAssignments(team, members);
+    if (!isNoop(d)) {
+      // Additions first. If anything below fails the project has too many
+      // people on it rather than too few, which is the safer way to be wrong.
+      if (d.added.length > 0) {
+        const { error } = await supabase.from('assignments').insert(
+          d.added.map((a) => ({ project_id: projectId, ...a })));
+        if (error) { setBusy(false); return setError(saveError(error)); }
+      }
+      for (const a of d.changed) {
+        const { error } = await supabase.from('assignments')
+          .update({ role_code: a.role_code })
+          .eq('project_id', projectId).eq('person_id', a.person_id);
+        if (error) { setBusy(false); return setError(saveError(error)); }
+      }
+      if (d.removed.length > 0) {
+        const { error } = await supabase.from('assignments')
+          .delete().eq('project_id', projectId).in('person_id', d.removed);
+        if (error) { setBusy(false); return setError(saveError(error)); }
+      }
     }
 
     setBusy(false);

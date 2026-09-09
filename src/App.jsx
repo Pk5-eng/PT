@@ -8,6 +8,7 @@ import Analytics from './components/Analytics.jsx';
 import ProjectPanel from './components/ProjectPanel.jsx';
 import SchemaNotice from './components/SchemaNotice.jsx';
 import { boardIsBehind } from './lib/schema.js';
+import { useRefreshOnReturn } from './lib/live.js';
 import { useRoute, toBoard, toAnalytics, toProject } from './lib/route.js';
 import {
   Search, X, Alert, Folder, Dashed, LogOut, Inbox, Plus, ChartIcon, Rocket, Clock,
@@ -132,6 +133,12 @@ export default function App() {
     if (!session) return;
     load();
   }, [session, load]);
+
+  // A board tab stays open for days in a studio of ten. Refreshed when its
+  // person comes back to it, never on a timer and never while the new-project
+  // panel is open on top of it.
+  const markFresh = useRefreshOnReturn(load, { paused: creating });
+  useEffect(() => { if (rows) markFresh(); }, [rows, markFresh]);
 
   // "/" focuses search, "n" opens the new-project panel, Escape clears search.
   // All three are muscle memory from every other tool these people use.

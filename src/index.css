@@ -904,3 +904,13 @@ tbody tr:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; 
 
 /* A deadline control that cannot work yet says so, instead of looking broken. */
 .deadline.off { opacity: .65; }
+
+/* A write in flight. The control stays usable: the change is already on screen
+   and will be put back if the database refuses it, so there is nothing to
+   protect the user from by taking the control away. This only says "not landed
+   yet", quietly. */
+.statuspick.pending, .deadline.pending input {
+  border-color: var(--brand-line);
+  box-shadow: inset 0 0 0 1px var(--brand-soft);
+}
+.deadline.pending .rel { opacity: .55; }

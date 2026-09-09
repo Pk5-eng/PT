@@ -71,7 +71,20 @@ between other tasks, not people who will learn a tool.
 7. **`ensure_project_structure()` is the only definition of which sections a project gets.**
    The new-project form, the seed and the backfill all call it. Never reimplement that rule in
    the browser.
-8. **Every migration is idempotent, and a new one that is not is a bug.** There is no
+8. **A write shows on screen before the database answers, and goes back if it refuses.**
+   Ten people use this between other tasks; a control that freezes for the length of a
+   round trip is the difference between a tool they use and one they avoid. Use
+   `optimistic()` in `src/lib/live.js`. Two conditions, and neither is optional: the revert
+   must restore what the database actually holds, and the failure must be said out loud -
+   optimism you cannot take back is just lying quickly. Anything the database decides
+   (`started_on`, `concluded_on`, `done_on`) is read back from the returned row, never
+   predicted here.
+9. **Never send a field the user did not change, and never delete something to re-add it.**
+   Use `changedFields()` and `diffAssignments()` in `src/lib/save.js`. A full-row update
+   silently reverts whatever a colleague changed while the form was open, and only substage
+   status changes are logged, so nothing would record that it happened. A delete-then-insert
+   has a window with no team at all, and a failure in the middle leaves it that way.
+10. **Every migration is idempotent, and a new one that is not is a bug.** There is no
    migration runner and by the constraints above there cannot be one, so applying a migration
    is a person pasting `ALL_MIGRATIONS.sql` into the SQL editor. That is only safe if the
    whole file is safe to paste from any state, so: `create table if not exists`,

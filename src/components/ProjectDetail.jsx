@@ -9,6 +9,7 @@ import { daysSpent } from '../lib/analytics.js';
 import ProjectPanel from './ProjectPanel.jsx';
 import SchemaNotice from './SchemaNotice.jsx';
 import { isSchemaBehind } from '../lib/schema.js';
+import { optimistic, useRefreshOnReturn } from '../lib/live.js';
 import {
   ArrowLeft, ChevronRight, Check, Alert, Activity, Layers, Users,
   Calendar, Pencil, Clock, LogOut,
@@ -83,14 +84,13 @@ function SectionDeadline({ value, onChange, busy, disabled }) {
     );
   }
   return (
-    <span className={`deadline${late ? ' over' : ''}`}>
+    <span className={`deadline${late ? ' over' : ''}${busy ? ' pending' : ''}`}>
       <Calendar size={13} />
       <label>
         <span className="vh">Section deadline</span>
         <input
           type="date"
           value={value ?? ''}
-          disabled={busy}
           onChange={(e) => onChange(e.target.value || null)}
           min="2000-01-01"
           max="2099-12-31"
@@ -115,7 +115,7 @@ export default function ProjectDetail({ projectId, onBack }) {
   const [people, setPeople] = useState([]);
   const [open, setOpen] = useState(null);
   const [collapsed, setCollapsed] = useState({});         // stage_group_id -> true
-  const [saving, setSaving] = useState(null);
+  const [pending, setPending] = useState({});   // id -> a write is in flight
   const [editing, setEditing] = useState(false);
   const [flash, setFlash] = useState(null);
   const [error, setError] = useState(null);
@@ -204,55 +204,151 @@ export default function ProjectDetail({ projectId, onBack }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // A screen left open all afternoon is refreshed when its person comes back to
+  // it - never while the edit panel is open or a write is in flight, because a
+  // refresh replaces the state those are sitting on top of.
+  const busy = editing || Object.keys(pending).length > 0;
+  const markFresh = useRefreshOnReturn(load, { paused: busy });
+  useEffect(() => { if (!busy) markFresh(); }, [rows, busy, markFresh]);
+
+  /** Patch one substage row in place. Keeps its nested substages/stage_groups. */
+  const patchRow = useCallback((id, fields) => {
+    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...fields } : r)));
+  }, []);
+
+  const mark = useCallback((key, on) => {
+    setPending((p) => {
+      if (!on) { const { [key]: _drop, ...rest } = p; return rest; }
+      return { ...p, [key]: true };
+    });
+  }, []);
+
+  /**
+   * The activity feed after a status change. Not awaited by the thing that
+   * triggered it: the row on screen is already correct, and the feed catching
+   * up a moment later costs the user nothing.
+   */
+  const refreshEvents = useCallback(async () => {
+    const { data } = await supabase
+      .from('events')
+      .select('id, from_status, to_status, at, substage_id, people(name)')
+      .eq('project_id', projectId)
+      .order('at', { ascending: false })
+      .limit(50);
+    if (data) setEvents(data);
+  }, [projectId]);
+
+  /**
+   * The dropdown is the entire editing interaction, so it has to feel like one.
+   *
+   * The row moves the moment you choose, and the database's answer replaces the
+   * guess when it arrives - the trigger stamps started_on and concluded_on, and
+   * those come back in the returned row rather than being predicted here. If
+   * the write is refused the row goes back to what it was and says why.
+   */
   async function changeStatus(row, status) {
-    setSaving(row.id);
+    const before = {
+      status: row.status, started_on: row.started_on, concluded_on: row.concluded_on,
+    };
     setError(null);
-    // The dropdown is the entire editing interaction. The database stamps the
-    // dates and writes the event; nothing about either is sent from here.
-    const { error } = await supabase.from('project_substage').update({ status }).eq('id', row.id);
-    if (error) setError(error.message);
-    else say(`${row.substages.name} — ${statusLabel(status)}`);
-    await load();
-    setSaving(null);
+    mark(row.id, true);
+
+    await optimistic({
+      apply: () => patchRow(row.id, { status }),
+      revert: () => patchRow(row.id, before),
+      send: () => supabase
+        .from('project_substage')
+        .update({ status })
+        .eq('id', row.id)
+        .select('id, status, started_on, concluded_on, target_date')
+        .single(),
+      settle: (data) => {
+        patchRow(row.id, data);
+        say(`${row.substages.name} — ${statusLabel(status)}`);
+        refreshEvents();
+      },
+      onError: (e) => setError(`Could not change ${row.substages.name}: ${e.message}`),
+    });
+
+    mark(row.id, false);
   }
 
   /** The substage-level target date. A plan, so it is authorable; see 0004. */
   async function setTargetDate(row, date) {
+    const before = { target_date: row.target_date };
     setError(null);
-    const { error } = await supabase
-      .from('project_substage').update({ target_date: date }).eq('id', row.id);
-    if (error) return setError(error.message);
-    say(date ? `Target set for ${row.substages.name}` : 'Target cleared');
-    await load();
+    mark(row.id, true);
+
+    await optimistic({
+      apply: () => patchRow(row.id, { target_date: date }),
+      revert: () => patchRow(row.id, before),
+      send: () => supabase
+        .from('project_substage').update({ target_date: date }).eq('id', row.id)
+        .select('id, target_date').single(),
+      settle: (data) => {
+        patchRow(row.id, data);
+        say(date ? `Target set for ${row.substages.name}` : 'Target cleared');
+      },
+      onError: (e) => setError(`Could not set that target date: ${e.message}`),
+    });
+
+    mark(row.id, false);
   }
 
   async function setSectionDeadline(groupId, date) {
+    const before = deadlines[groupId] ?? null;
     setError(null);
-    setSaving(groupId);
-    const { error } = await supabase
-      .from('project_stage_group')
-      .upsert({ project_id: projectId, stage_group_id: groupId, target_date: date },
-              { onConflict: 'project_id,stage_group_id' });
-    setSaving(null);
-    if (error) {
-      if (isSchemaBehind(error)) { setBehind(true); return; }
-      return setError(error.message);
-    }
-    say(date ? `Deadline set — ${shortDate(date)}` : 'Deadline cleared');
-    await load();
+    mark(groupId, true);
+
+    await optimistic({
+      apply: () => setDeadlines((d) => ({ ...d, [groupId]: { ...d[groupId], target_date: date } })),
+      revert: () => setDeadlines((d) => ({ ...d, [groupId]: before })),
+      send: () => supabase
+        .from('project_stage_group')
+        .upsert({ project_id: projectId, stage_group_id: groupId, target_date: date },
+                { onConflict: 'project_id,stage_group_id' })
+        .select('id, stage_group_id, target_date')
+        .single(),
+      settle: (data) => {
+        setDeadlines((d) => ({ ...d, [groupId]: data }));
+        say(date ? `Deadline set — ${shortDate(date)}` : 'Deadline cleared');
+      },
+      onError: (e) => {
+        if (isSchemaBehind(e)) { setBehind(true); return; }
+        setError(`Could not set that deadline: ${e.message}`);
+      },
+    });
+
+    mark(groupId, false);
   }
 
+  /**
+   * Ticking a box is the smallest interaction in the app and used to be one of
+   * the slowest: an upsert, then a refetch of every deliverable row on the
+   * project. The tick now lands at once and only the one row it wrote comes
+   * back. done_on is still the database's to decide - the optimistic state
+   * leaves it alone rather than guessing today's date, and takes it from the
+   * returned row.
+   */
   async function toggleDeliverable(deliverableId, done) {
+    const before = ticks[deliverableId] ?? null;
     setError(null);
-    const { error } = await supabase
-      .from('project_deliverable')
-      .upsert({ project_id: projectId, deliverable_id: deliverableId, done },
-              { onConflict: 'project_id,deliverable_id' });
-    if (error) return setError(error.message);
-    const { data } = await supabase
-      .from('project_deliverable').select('id, deliverable_id, done, done_on').eq('project_id', projectId);
-    setTicks(Object.fromEntries((data ?? []).map((r) => [r.deliverable_id, r])));
-    say(done ? 'Ticked' : 'Unticked');
+
+    await optimistic({
+      apply: () => setTicks((t) => ({ ...t, [deliverableId]: { ...t[deliverableId], done } })),
+      revert: () => setTicks((t) => ({ ...t, [deliverableId]: before })),
+      send: () => supabase
+        .from('project_deliverable')
+        .upsert({ project_id: projectId, deliverable_id: deliverableId, done },
+                { onConflict: 'project_id,deliverable_id' })
+        .select('id, deliverable_id, done, done_on')
+        .single(),
+      settle: (data) => {
+        setTicks((t) => ({ ...t, [deliverableId]: data }));
+        say(done ? 'Ticked' : 'Unticked');
+      },
+      onError: (e) => setError(`Could not save that tick: ${e.message}`),
+    });
   }
 
   // Flat list grouped by stage group, exactly as the spec asks.
@@ -374,7 +470,7 @@ export default function ProjectDetail({ projectId, onBack }) {
                 </button>
                 <SectionDeadline
                   value={deadline}
-                  busy={saving === g.id}
+                  busy={!!pending[g.id]}
                   disabled={behind}
                   onChange={(date) => setSectionDeadline(g.id, date)}
                 />
@@ -416,9 +512,8 @@ export default function ProjectDetail({ projectId, onBack }) {
                       </div>
 
                       <select
-                        className="statuspick"
+                        className={`statuspick${pending[r.id] ? ' pending' : ''}`}
                         value={r.status}
-                        disabled={saving === r.id}
                         onChange={(e) => changeStatus(r, e.target.value)}
                         aria-label={`Status of ${r.substages.name}`}
                       >

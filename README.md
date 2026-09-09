@@ -200,6 +200,18 @@ to Supabase.
   exceptions, and all three are plans rather than records.
 - `ensure_project_structure()` is the single definition of which sections a project gets.
   The new-project form, the seed and the backfill all call it, so they cannot disagree.
+- **Writes are optimistic, and reverting is the price of that.** A status change, a tick, a
+  deadline or a target date appears at once and is put back if the database refuses, with the
+  reason on screen (`optimistic()` in `src/lib/live.js`). Changing one substage status used to
+  send a write and then refetch the whole screen — nine queries, with the control frozen
+  throughout. It is one query now, and the row responds in about 90ms against a database
+  taking 800.
+- **Saves send only what changed** (`src/lib/save.js`). A whole-row update would revert a
+  colleague's concurrent edit with nothing in the log to show it. The team is written as a
+  diff for a harder reason: the delete-then-insert it replaced could leave a project with no
+  team at all if the insert failed.
+- **Screens refresh when their person returns to the tab**, never on a timer, and never while
+  a form is open or a write is in flight.
 - **The app tolerates being newer than the database, but never silently.** There is no
   migration step in the build and by CLAUDE.md there cannot be one, so the window where
   the deployed app is ahead of the schema is normal. A query for something *additive* may
