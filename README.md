@@ -128,6 +128,13 @@ to Supabase.
   exceptions, and all three are plans rather than records.
 - `ensure_project_structure()` is the single definition of which sections a project gets.
   The new-project form, the seed and the backfill all call it, so they cannot disagree.
+- **The app tolerates being newer than the database, but never silently.** There is no
+  migration step in the build and by CLAUDE.md there cannot be one, so the window where
+  the deployed app is ahead of the schema is normal. A query for something *additive* may
+  fail without taking the screen down; when it does, `src/lib/schema.js` recognises the
+  PostgREST code and a banner names the migration to run. It deliberately does not treat a
+  permission error as schema drift — that would hide an RLS mistake, which is the whole
+  authorisation boundary here.
 - "Blocked by" was removed from the product. The `blocks` table and its rows still exist
   and nothing reads them; dropping it is a deliberate one-line follow-up, not a leftover.
 - Dependencies are fixed by spec: React, Vite, `@supabase/supabase-js`, `date-fns`.

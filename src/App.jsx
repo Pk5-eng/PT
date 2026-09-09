@@ -6,6 +6,8 @@ import SignIn from './components/SignIn.jsx';
 import ProjectDetail from './components/ProjectDetail.jsx';
 import Analytics from './components/Analytics.jsx';
 import ProjectPanel from './components/ProjectPanel.jsx';
+import SchemaNotice from './components/SchemaNotice.jsx';
+import { boardIsBehind } from './lib/schema.js';
 import { useRoute, toBoard, toAnalytics, toProject } from './lib/route.js';
 import {
   Search, X, Alert, Folder, Dashed, LogOut, Inbox, Plus, ChartIcon, Rocket, Clock,
@@ -73,6 +75,7 @@ export default function App() {
   const [names, setNames] = useState([]);            // names only, for the filter
   const [error, setError] = useState(null);
   const [creating, setCreating] = useState(false);
+  const [behind, setBehind] = useState(false);   // database older than this app
   const route = useRoute();
 
   const [query, setQuery] = useState('');
@@ -117,6 +120,12 @@ export default function App() {
     setNames([...seen].sort());
     setPeople(roster.data);
     setRows(board.data);
+    // The board view gains its new columns in the same migration that adds the
+    // deadline table, so a row without them says the database is behind - and
+    // says it without a second request. Worth catching here as well as on the
+    // project screen: the counts below would otherwise be quietly wrong, and a
+    // wrong count is harder to notice than a missing feature.
+    setBehind(boardIsBehind(board.data));
   }, []);
 
   useEffect(() => {
@@ -137,12 +146,12 @@ export default function App() {
       const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === '/' && !typing) { e.preventDefault(); searchRef.current?.focus(); }
-      if (e.key === 'n' && !typing) { e.preventDefault(); setCreating(true); }
+      if (e.key === 'n' && !typing && !behind) { e.preventDefault(); setCreating(true); }
       if (e.key === 'Escape' && typing) { setQuery(''); e.target.blur(); }
     };
     window.addEventListener('keydown', on);
     return () => window.removeEventListener('keydown', on);
-  }, [onBoard]);
+  }, [onBoard, behind]);
 
   // Scoped = search, type and person. The card numbers are computed from this,
   // so they do not move when you click one of them.
@@ -213,7 +222,9 @@ export default function App() {
             <ChartIcon size={15} /><span className="full">Numbers</span>
           </button>
           <button className="btn primary" onClick={() => setCreating(true)}
-                  title="New project" aria-label="New project">
+                  disabled={behind}
+                  title={behind ? 'Needs the pending database migration' : 'New project'}
+                  aria-label="New project">
             <Plus size={15} /><span className="full">New project</span><span className="kbd">n</span>
           </button>
           <button className="btn ghost icon" onClick={() => supabase.auth.signOut()} title="Sign out"
@@ -224,6 +235,10 @@ export default function App() {
       </div>
 
       <div className="wrap">
+        {behind && (
+          <SchemaNotice what="Delivery dates, section deadlines and creating a project are switched off until it is applied, and the “Nothing started yet” count below is not to be trusted." />
+        )}
+
         <Cards totals={totals} focus={focus} setFocus={setFocus} />
 
         <div className="toolbar">

@@ -885,3 +885,22 @@ tbody tr:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; 
   background: var(--surface-2); border-radius: var(--r-sm); line-height: 1.55;
 }
 .oneline strong { color: var(--ink); }
+
+/* A banner that warns rather than reports a failure. Same shape as the block
+   banner it replaces, in the amber that means "attend to this", not the red
+   that means "this is broken" - the app still works, one feature is off. */
+.banner.warn {
+  background: var(--work-bg); border-color: var(--work-line);
+  border-left: 3px solid var(--work); align-items: flex-start;
+}
+.banner.warn svg { color: var(--work); }
+.banner.warn strong { display: block; color: var(--ink); }
+.banner.warn p { margin: 5px 0 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.55; }
+.banner.warn code {
+  background: var(--surface); border: 1px solid var(--work-line); border-radius: 4px;
+  padding: 1px 5px; font-size: 12px;
+}
+.banner { max-width: 1000px; }
+
+/* A deadline control that cannot work yet says so, instead of looking broken. */
+.deadline.off { opacity: .65; }

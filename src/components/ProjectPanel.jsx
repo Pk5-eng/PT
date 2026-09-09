@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { PROJECT_STATUSES, ROLES } from '../lib/format.js';
 import { X, Check, Alert, Users, Calendar, Plus } from './Icons.jsx';
+import { isSchemaBehind, MIGRATION_FILE } from '../lib/schema.js';
 
 /**
  * The panel that slides in from the right to create a project, and the same
@@ -30,6 +31,17 @@ const TYPES = [
   ['ID', 'ID', 'Interior design'],
   ['IR', 'IR', 'Interior renovation'],
 ];
+
+/**
+ * A save can fail because the database has not had the migration applied yet.
+ * That is not the user's mistake and the PostgREST sentence for it is not
+ * readable, so it is translated once, here.
+ */
+const saveError = (error) =>
+  isSchemaBehind(error)
+    ? `The database is one migration behind this app, so this cannot be saved yet. `
+      + `Apply supabase/${MIGRATION_FILE} in the Supabase SQL editor and try again.`
+    : error.message;
 
 const blank = () => ({
   name: '', type: 'AR', client_name: '', code: '', site_location: '',
@@ -119,10 +131,10 @@ export default function ProjectPanel({ open, project, people, team, onClose, onS
 
     if (editing) {
       const { error } = await supabase.from('projects').update(payload).eq('id', projectId);
-      if (error) { setBusy(false); return setError(error.message); }
+      if (error) { setBusy(false); return setError(saveError(error)); }
     } else {
       const { data, error } = await supabase.from('projects').insert(payload).select('id').single();
-      if (error) { setBusy(false); return setError(error.message); }
+      if (error) { setBusy(false); return setError(saveError(error)); }
       projectId = data.id;
       // The full section structure, from the same database function the
       // backfill used. Failing here is worth saying out loud: the project
@@ -131,7 +143,7 @@ export default function ProjectPanel({ open, project, people, team, onClose, onS
       const { error: structErr } = await supabase.rpc('ensure_project_structure', { p_project_id: projectId });
       if (structErr) {
         setBusy(false);
-        return setError(`Project saved, but its sections could not be created: ${structErr.message}`);
+        return setError(`Project saved, but its sections could not be created. ${saveError(structErr)}`);
       }
     }
 
@@ -140,11 +152,11 @@ export default function ProjectPanel({ open, project, people, team, onClose, onS
     // code for a result nobody can tell apart.
     const wanted = Object.entries(members);
     const del = await supabase.from('assignments').delete().eq('project_id', projectId);
-    if (del.error) { setBusy(false); return setError(del.error.message); }
+    if (del.error) { setBusy(false); return setError(saveError(del.error)); }
     if (wanted.length > 0) {
       const ins = await supabase.from('assignments').insert(
         wanted.map(([person_id, role_code]) => ({ project_id: projectId, person_id, role_code })));
-      if (ins.error) { setBusy(false); return setError(ins.error.message); }
+      if (ins.error) { setBusy(false); return setError(saveError(ins.error)); }
     }
 
     setBusy(false);

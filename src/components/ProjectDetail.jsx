@@ -7,6 +7,8 @@ import {
 import { workingDays, todayISO } from '../lib/workdays.js';
 import { daysSpent } from '../lib/analytics.js';
 import ProjectPanel from './ProjectPanel.jsx';
+import SchemaNotice from './SchemaNotice.jsx';
+import { isSchemaBehind } from '../lib/schema.js';
 import {
   ArrowLeft, ChevronRight, Check, Alert, Activity, Layers, Users,
   Calendar, Pencil, Clock, LogOut,
@@ -70,9 +72,16 @@ function Pill({ status }) {
  * date to null rather than deleting the row, so a deadline that gets removed
  * and re-set does not churn rows.
  */
-function SectionDeadline({ value, onChange, busy }) {
+function SectionDeadline({ value, onChange, busy, disabled }) {
   const over = value ? workingDays(value, todayISO()) : null;
   const late = over != null && over > 0;
+  if (disabled) {
+    return (
+      <span className="deadline off" title="Needs the pending database migration">
+        <Calendar size={13} /><span className="rel none">deadlines unavailable</span>
+      </span>
+    );
+  }
   return (
     <span className={`deadline${late ? ' over' : ''}`}>
       <Calendar size={13} />
@@ -101,6 +110,7 @@ export default function ProjectDetail({ projectId, onBack }) {
   const [ticks, setTicks] = useState({});                 // deliverable_id -> row
   const [events, setEvents] = useState([]);
   const [deadlines, setDeadlines] = useState({});         // stage_group_id -> row
+  const [behind, setBehind] = useState(false);            // database older than this app
   const [team, setTeam] = useState([]);
   const [people, setPeople] = useState([]);
   const [open, setOpen] = useState(null);
@@ -138,8 +148,18 @@ export default function ProjectDetail({ projectId, onBack }) {
       supabase.from('people').select('id, name').eq('active', true).order('name'),
     ]);
 
-    const failed = [p, ps, dl, pd, ev, as, psg, pp].find((r) => r.error);
+    // Section deadlines are additive: they arrived in migration 0009, and a
+    // database that has not had it applied yet is a normal state for this
+    // architecture, not a broken one. So psg is NOT in the fatal list. Losing
+    // it costs the deadline controls and nothing else, and the banner says so
+    // rather than letting the feature vanish without explanation.
+    const behindNow = isSchemaBehind(psg.error);
+    setBehind(behindNow);
+
+    const failed = [p, ps, dl, pd, ev, as, pp].find((r) => r.error)
+      ?? (behindNow ? null : (psg.error ? psg : null));
     if (failed) return setError(failed.error.message);
+    setError(null);
 
     setProject(p.data);
 
@@ -157,7 +177,7 @@ export default function ProjectDetail({ projectId, onBack }) {
 
     setTicks(Object.fromEntries(pd.data.map((r) => [r.deliverable_id, r])));
     setEvents(ev.data);
-    setDeadlines(Object.fromEntries(psg.data.map((r) => [r.stage_group_id, r])));
+    setDeadlines(Object.fromEntries((psg.data ?? []).map((r) => [r.stage_group_id, r])));
     setTeam(as.data.map((a) => ({
       person_id: a.person_id, name: a.people?.name, role_code: a.role_code, role: a.role_code,
     })).filter((t) => t.name));
@@ -214,7 +234,10 @@ export default function ProjectDetail({ projectId, onBack }) {
       .upsert({ project_id: projectId, stage_group_id: groupId, target_date: date },
               { onConflict: 'project_id,stage_group_id' });
     setSaving(null);
-    if (error) return setError(error.message);
+    if (error) {
+      if (isSchemaBehind(error)) { setBehind(true); return; }
+      return setError(error.message);
+    }
     say(date ? `Deadline set — ${shortDate(date)}` : 'Deadline cleared');
     await load();
   }
@@ -316,6 +339,10 @@ export default function ProjectDetail({ projectId, onBack }) {
           </div>
         </header>
 
+        {behind && (
+          <SchemaNotice what="Section deadlines are switched off until it is applied — the table that holds them does not exist yet." />
+        )}
+
         {error && <p className="err inline"><Alert size={15} />{error}</p>}
 
         {rows.length === 0 && (
@@ -348,6 +375,7 @@ export default function ProjectDetail({ projectId, onBack }) {
                 <SectionDeadline
                   value={deadline}
                   busy={saving === g.id}
+                  disabled={behind}
                   onChange={(date) => setSectionDeadline(g.id, date)}
                 />
               </h2>
