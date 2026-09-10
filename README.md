@@ -226,6 +226,12 @@ to Supabase.
   PostgREST code and a banner names the migration to run. It deliberately does not treat a
   permission error as schema drift — that would hide an RLS mistake, which is the whole
   authorisation boundary here.
+- **Migration 0013 is invisible to the "database is behind" check, by nature.** It adds no
+  table, column or function - only policies and column grants - so there is nothing in the
+  catalogue for `src/lib/schema.js` to look for and `READY.sql` still says READY without it.
+  A database that has not had it looks entirely healthy until someone presses Add on the team
+  panel. The panel's refusal message therefore names both possible causes rather than guessing
+  between them.
 - **The roster is editable from the board, and the two dangerous columns are not.** Any signed-in
   member can add a colleague, correct a name or email, and archive or restore someone; `role`
   and `auth_id` are not writable from the browser by anyone, so nothing on that screen can grant

@@ -39,13 +39,35 @@ import { X, Check, Alert, Users, UserPlus, Archive, Undo, Pencil } from './Icons
  * and would look exactly like tidying up.
  */
 
-/** A refusal that comes back as "no rows" rather than as a message. */
-const NO_ROWS = 'PGRST116';
+/**
+ * Why a roster write was refused.
+ *
+ * There are three answers and they have to be told apart, because the app
+ * cannot detect the third one on its own. Migration 0013 adds no table, no
+ * column and no function - only policies and column grants - so `isSchemaBehind`
+ * has nothing to look for and READY.sql still says READY on a database that has
+ * never seen it. A database one migration behind therefore looks entirely
+ * healthy right up until someone presses Add, and the refusal it gives back is
+ * indistinguishable from "you are not allowed".
+ *
+ * So both are named. Guessing between them and being wrong sends a person to
+ * the wrong place: to an admin who cannot help, or to the SQL editor for a
+ * migration that is already applied.
+ */
+const NO_ROWS = 'PGRST116';        // an update that matched no row: a policy refused it
+const FORBIDDEN = '42501';         // an insert the policy's WITH CHECK refused
 
-const writeError = (error, fallback) =>
-  error?.code === NO_ROWS
-    ? fallback
-    : (error?.message ?? 'The change did not save.');
+const BEHIND =
+  ' If nobody can change the team, the database has probably not had migration 0013 applied '
+  + '— paste supabase/ALL_MIGRATIONS.sql into the Supabase SQL editor.';
+
+const writeError = (error, fallback) => {
+  if (error?.code === NO_ROWS) return fallback + BEHIND;
+  if (error?.code === FORBIDDEN) {
+    return 'The database refused that: roster editing is not switched on for you.' + BEHIND;
+  }
+  return error?.message ?? 'The change did not save.';
+};
 
 /** One person: their name, whether they can be reached, and what they carry. */
 function Person({ p, roster, load, me, canTouchAdmins, onArchive, onRestore, onSave, busy }) {
