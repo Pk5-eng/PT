@@ -1,57 +1,45 @@
-import { lateness, idleReason, planDays, deliveryIn } from '../lib/board.js';
+import { lateness, idleReason, deliveryIn } from '../lib/board.js';
 import { toProject } from '../lib/route.js';
 import { shortDate, dueWording, projectStatusLabel } from '../lib/format.js';
 import { Alert, Users, ArrowDown, ArrowUp, Dashed, Check, Clock, Calendar } from './Icons.jsx';
 
 /**
- * One row's days figure. Working days: Sundays are not days of work, here or
- * anywhere else in the app.
+ * How late this row is: the board's whole reason for existing, and now a column
+ * of its own rather than half of a "days / plan" pair.
  *
- * Two different numbers can make a row late and they must never be confused:
- *   days_in_substage  how long the work has actually been running, vs its plan
- *   days_past_target  how far past its target date, or its section deadline
+ * The pair is gone because it was mostly empty. It read "— / —, not started" on
+ * two rows in three: the spreadsheet recorded no start dates, so there was no
+ * elapsed figure to set against a plan, and a column that blank earns none of
+ * the width it takes. The elapsed-against-plan figure is still on the project
+ * screen, where a start date is something you can actually see.
  *
- * Only the first belongs in a "days / plan" pair. Showing a target overrun
- * against a planned duration would read as elapsed time and be a lie, so when
- * there is no start date the row says so and reports the overrun on its own
- * terms.
+ * Three states, and the third is the point. "On plan" is a CLAIM, and it is only
+ * available when something exists to judge against: a planned duration the work
+ * has been running against, a target date, or a section deadline. Twenty of
+ * these projects have none of those, and writing "on plan" against them would
+ * be inventing reassurance out of an absence - exactly what the spreadsheet did
+ * with an uncoloured cell. Those rows say nothing, because nothing is known.
  */
-function Days({ row }) {
+function Late({ row }) {
   const late = lateness(row);
-  const plan = planDays(row);
-
   if (!row.substage_name) return <span className="none">—</span>;
-
-  const elapsed = row.days_in_substage;
-
-  if (elapsed != null) {
-    return (
-      <div className={`days${late.late ? ' over' : ''}`}>
-        <span className="big">{elapsed}</span>
-        <span className="plan"> / {plan != null ? plan : '—'}</span>
-        {late.late && (
-          <div><span className="why"><Alert size={11} />{late.days} days {late.basis}</span></div>
-        )}
-      </div>
-    );
-  }
 
   if (late.late) {
     return (
       <div className="days over">
         <span className="big">{late.days}</span>
         <span className="plan"> days</span>
-        <div><span className="why"><Alert size={11} />{late.basis}</span></div>
+        <div className="basis">{late.basis}</div>
       </div>
     );
   }
 
-  return (
-    <div className="days">
-      <span className="none">— / {plan != null ? plan : '—'}</span>
-      <span className="quiet">not started</span>
-    </div>
-  );
+  const judgeable = row.days_over != null
+    || row.days_past_target != null
+    || row.days_past_section != null;
+  return judgeable
+    ? <span className="onplan">on plan</span>
+    : <span className="none" title="No plan, target or section deadline to judge this against">—</span>;
 }
 
 /**
@@ -152,7 +140,7 @@ export default function Board({ rows, teams, sort, setSort }) {
             <tr>
               <SortHead label="Project" sortKey="name" sort={sort} setSort={setSort} />
               <SortHead label="Current substage" sortKey="stage" sort={sort} setSort={setSort} />
-              <SortHead label="Days / plan" sortKey="overrun" sort={sort} setSort={setSort} Icon={Clock} />
+              <SortHead label="Overdue by" sortKey="overrun" sort={sort} setSort={setSort} Icon={Clock} />
               <SortHead label="Delivery" sortKey="delivery" sort={sort} setSort={setSort} Icon={Calendar} />
               <th>Team</th>
             </tr>
@@ -170,7 +158,7 @@ export default function Board({ rows, teams, sort, setSort }) {
                   </div>
                 </td>
                 <td><Substage row={r} /></td>
-                <td><Days row={r} /></td>
+                <td><Late row={r} /></td>
                 <td><Delivery row={r} /></td>
                 <td><Team team={teams[r.id]} /></td>
               </tr>
@@ -184,7 +172,6 @@ export default function Board({ rows, teams, sort, setSort }) {
       <div className="rowcards">
         {rows.map((r) => {
           const late = lateness(r);
-          const plan = planDays(r);
           const team = teams[r.id] ?? [];
           const working = team.filter((t) => t.role !== 'INVOLVED');
           const left = deliveryIn(r);
@@ -194,15 +181,11 @@ export default function Board({ rows, teams, sort, setSort }) {
                  onClick={() => open(r.id)} onKeyDown={(e) => onKey(e, r.id)}>
               <div className="line1">
                 <span className="pname">{r.name}</span>
-                <span className={`days${late.late ? ' over' : ''}`}>
-                  {r.days_in_substage != null ? (
-                    <><span className="big">{r.days_in_substage}</span><span className="plan"> / {plan ?? '—'}</span></>
-                  ) : late.late ? (
-                    <><span className="big">{late.days}</span><span className="plan"> days</span></>
-                  ) : (
-                    <span className="none">— / {plan ?? '—'}</span>
-                  )}
-                </span>
+                {late.late && (
+                  <span className="days over">
+                    <span className="big">{late.days}</span><span className="plan"> days</span>
+                  </span>
+                )}
               </div>
               <div className="line2">
                 {r.substage_name ? (

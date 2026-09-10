@@ -952,3 +952,12 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
    list squeezed into half a screen wraps its dates. */
 .figs.one { grid-template-columns: 1fr; }
 .toolbar .scope { color: var(--ink-3); font-size: 13px; margin-left: 2px; }
+
+/* The overrun column, on its own terms. There is no plan half any more, so the
+   basis ("past target", "past plan") sits under the number instead of inside a
+   pill competing with it. */
+.days .basis { font-size: 11.5px; color: var(--late); margin-top: 2px; }
+
+/* "On plan" is only said where something exists to be on plan against; a row
+   with no plan, target or deadline says nothing at all. */
+.onplan { color: var(--ok); font-size: 13px; font-weight: 550; }

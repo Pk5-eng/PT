@@ -74,16 +74,15 @@ export function median(values) {
  * The four numbers above the figures. Each one is the headline of a figure
  * below it, so a reader never has to work out which chart a number came from.
  */
-export function headline({ items, undated, rows }) {
-  const late = overdue(items);
-  const soon = dueWithin(items, 24);          // four working weeks
-  const running = undated.reduce((n, s) => n + s.inProcess, 0);
-  const total = undated.reduce((n, s) => n + s.value, 0);
+export function headline({ items, coverage, rows }) {
+  const sum = (key) => coverage.reduce((n, s) => n + s[key], 0);
   return {
-    overdue: late.length,
-    soon: soon.length,
-    runningUndated: running,
-    totalUndated: total,
+    overdue: overdue(items).length,
+    soon: dueWithin(items, 24).length,          // four working weeks
+    runningUndated: sum('runningUndated'),
+    running: sum('runningUndated') + sum('runningDated'),
+    totalUndated: sum('undated'),
+    totalPending: sum('value'),
     live: rows.filter((r) => r.status === 'ongoing').length,
     dated: items.length,
   };
@@ -149,39 +148,59 @@ export const overdue = (items) => items.filter((i) => i.days < 0);
 export const dueWithin = (items, days) => items.filter((i) => i.days >= 0 && i.days <= days);
 
 /**
- * Work that is in scope, not finished, and carries no date of any kind.
+ * Every unfinished stage in scope, split by two things at once: whether the
+ * work has begun, and whether anything holds it to a date.
  *
- * WHY THE SPLIT MATTERS. Migration 0011 gave every project its full section
- * structure, so most of these rows are stages nobody has begun - real, but not
- * urgent. A single total would be a number in the hundreds that says "you have
- * planned nothing", which is both alarming and useless.
+ * FOUR STATES, NOT TWO. The figure counted only the undated half at first,
+ * which answered "what is unscheduled" but not "how much of what we are doing
+ * is under control". Showing the dated running work beside the undated running
+ * work turns a list of gaps into a proportion, and a proportion is what tells
+ * you whether the gap is the exception or the rule.
  *
- * Split by status, the same list answers the question worth asking: how much
- * work is RUNNING RIGHT NOW with nothing to measure it against. That is the
- * short, actionable half, and it sits beside the long half rather than hiding
- * it.
+ * The order they come back in is the order they are stacked, and it is
+ * deliberate: work in flight first, work not begun second, and inside each
+ * pair the undated one leads. So the left of every bar is what is happening
+ * now, and the red at the very left is the part nothing is holding to a date.
  *
- * A stage counts as undated only if neither it nor its section carries a date.
- * A section deadline is a commitment that covers the stages inside it, so a
- * stage under a dated section is scheduled even without one of its own.
+ * A stage under a dated section counts as dated. A section deadline is a
+ * commitment that covers the stages inside it, so it would be wrong to call
+ * them unscheduled - but nothing is inferred onto the stage itself, and
+ * deadlineItems() still lists only dates a person actually set.
  */
-export function undatedWork(stages, sectionOrder) {
-  const empty = () => ({ inProcess: 0, notStarted: 0, items: [] });
+export function dateCoverage(stages, sectionOrder) {
+  const empty = () => ({
+    runningUndated: 0, runningDated: 0, notStartedUndated: 0, notStartedDated: 0, items: [],
+  });
   const bySection = new Map(sectionOrder.map((s) => [s, empty()]));
 
   for (const s of stages) {
-    if (s.status !== 'in_process' && s.status !== 'not_started' && s.status !== 'hold') continue;
-    if (s.target_date || s.section_target) continue;
+    // in_process and hold have both begun; hold is begun work that has stopped.
+    const running = s.status === 'in_process' || s.status === 'hold';
+    if (!running && s.status !== 'not_started') continue;   // done, cancelled, out of scope
+
     if (!bySection.has(s.section)) bySection.set(s.section, empty());
-    const bucket = bySection.get(s.section);
-    if (s.status === 'not_started') bucket.notStarted += 1;
-    else bucket.inProcess += 1;                        // in_process and hold: work that has begun
-    bucket.items.push(s);
+    const b = bySection.get(s.section);
+    const dated = !!(s.target_date || s.section_target);
+
+    if (running && !dated) b.runningUndated += 1;
+    else if (running) b.runningDated += 1;
+    else if (!dated) b.notStartedUndated += 1;
+    else b.notStartedDated += 1;
+
+    if (!dated) b.items.push(s);
   }
 
   return sectionOrder.map((label) => {
     const b = bySection.get(label) ?? empty();
-    return { label, inProcess: b.inProcess, notStarted: b.notStarted,
-             value: b.inProcess + b.notStarted, items: b.items };
+    return {
+      label,
+      runningUndated: b.runningUndated,
+      runningDated: b.runningDated,
+      notStartedUndated: b.notStartedUndated,
+      notStartedDated: b.notStartedDated,
+      value: b.runningUndated + b.runningDated + b.notStartedUndated + b.notStartedDated,
+      undated: b.runningUndated + b.notStartedUndated,
+      items: b.items,
+    };
   });
 }

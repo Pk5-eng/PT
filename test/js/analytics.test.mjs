@@ -2,7 +2,7 @@
 // about the studio's work, so each is pinned to an example.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { daysSpent, teamLoad, median, deadlineItems, overdue, dueWithin, undatedWork }
+import { daysSpent, teamLoad, median, deadlineItems, overdue, dueWithin, dateCoverage }
   from '../../src/lib/analytics.js';
 
 test('days spent adds up each stage, and stops a finished one at its conclusion', () => {
@@ -98,32 +98,44 @@ test('overdue and due-soon split the list without overlapping or losing any', ()
   assert.deepEqual(dueWithin(items, 24).map((i) => i.what), ['soon']);
 });
 
-test('undated work splits running from not-started, and keeps empty sections', () => {
+test('every unfinished stage lands in exactly one of the four states', () => {
   const stages = [
-    { status: 'in_process',  section: 'CONCEPT DEVELOPMENT', target_date: null, section_target: null },
-    { status: 'hold',        section: 'CONCEPT DEVELOPMENT', target_date: null, section_target: null },
-    { status: 'not_started', section: 'CONCEPT DEVELOPMENT', target_date: null, section_target: null },
-    { status: 'not_started', section: 'GFC-ID',              target_date: null, section_target: null },
-  ];
-  const out = undatedWork(stages, ['CONCEPT DEVELOPMENT', 'DESIGN DEVELOPMENT', 'GFC-ID']);
-  assert.deepEqual(out.map((d) => [d.label, d.inProcess, d.notStarted]), [
-    ['CONCEPT DEVELOPMENT', 2, 1],     // hold counts as begun
-    ['DESIGN DEVELOPMENT', 0, 0],      // kept: a section with no gap is a fact too
-    ['GFC-ID', 0, 1],
-  ]);
-});
-
-test('a dated stage, or one under a dated section, is not undated', () => {
-  const stages = [
+    { status: 'in_process',  section: 'A', target_date: null,         section_target: null },
+    { status: 'hold',        section: 'A', target_date: null,         section_target: null },
     { status: 'in_process',  section: 'A', target_date: '2026-10-01', section_target: null },
-    { status: 'in_process',  section: 'A', target_date: null, section_target: '2026-10-01' },
-    { status: 'in_process',  section: 'A', target_date: null, section_target: null },
+    { status: 'not_started', section: 'A', target_date: null,         section_target: null },
+    { status: 'not_started', section: 'A', target_date: null,         section_target: '2026-10-01' },
   ];
-  assert.equal(undatedWork(stages, ['A'])[0].value, 1);
+  const [a] = dateCoverage(stages, ['A']);
+  assert.equal(a.runningUndated, 2);        // hold has begun too
+  assert.equal(a.runningDated, 1);
+  assert.equal(a.notStartedUndated, 1);
+  assert.equal(a.notStartedDated, 1);       // covered by its section's deadline
+  assert.equal(a.value, 5);                 // the four states account for every row
+  assert.equal(a.undated, 3);
 });
 
-test('finished and out-of-scope work is never counted as unscheduled', () => {
+test('a section with no unfinished work is kept, not dropped', () => {
+  // A section that is fully done is a fact about the project, and a bar chart
+  // that quietly omits it makes the sections look fewer than they are.
+  const out = dateCoverage([], ['A', 'B']);
+  assert.deepEqual(out.map((d) => [d.label, d.value]), [['A', 0], ['B', 0]]);
+});
+
+test('finished and out-of-scope work is in none of the four states', () => {
   const stages = ['done', 'cancelled', 'not_in_scope'].map((status) =>
     ({ status, section: 'A', target_date: null, section_target: null }));
-  assert.equal(undatedWork(stages, ['A'])[0].value, 0);
+  assert.equal(dateCoverage(stages, ['A'])[0].value, 0);
+});
+
+test('a date on the stage or on its section both count as dated', () => {
+  const stages = [
+    { status: 'in_process', section: 'A', target_date: '2026-10-01', section_target: null },
+    { status: 'in_process', section: 'A', target_date: null, section_target: '2026-10-01' },
+    { status: 'in_process', section: 'A', target_date: null, section_target: null },
+  ];
+  const [a] = dateCoverage(stages, ['A']);
+  assert.equal(a.runningDated, 2);
+  assert.equal(a.runningUndated, 1);
+  assert.equal(a.undated, 1);
 });

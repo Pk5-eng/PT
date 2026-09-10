@@ -112,6 +112,11 @@ between other tasks, not people who will learn a tool.
 - **Nothing on that screen is inferred.** A stage with no date does not borrow its section's,
   and a section does not borrow the project's delivery date. The second figure exists to count
   those absences, and it would be measuring its own guesses if the first had filled them in.
+- **The board does not show elapsed-against-plan.** That column read "— / —, not started" on
+  two rows in three, because the spreadsheet recorded no start dates. It is one "Overdue by"
+  column now, and the elapsed figure lives on the project screen where a start date is visible.
+  "On plan" is only written where something exists to be on plan against — a plan, a target or a
+  section deadline. A row with none of those says nothing, because nothing is known about it.
 - **The board shows the substage that is stuck, not the first one.** 10 of 17 active projects run
   several substages at once, so a row reports the most overdue and counts the rest as "+N more".
 

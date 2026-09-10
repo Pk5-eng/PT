@@ -5,7 +5,7 @@ import { statusLabel, shortDate, dueWording } from '../lib/format.js';
 import { isSchemaBehind } from '../lib/schema.js';
 import SchemaNotice from './SchemaNotice.jsx';
 import {
-  deadlineItems, overdue, dueWithin, undatedWork, teamLoad, headline,
+  deadlineItems, overdue, dueWithin, dateCoverage, teamLoad, headline,
 } from '../lib/analytics.js';
 import { Alert, ArrowLeft, Calendar, Users, Dashed, Check } from './Icons.jsx';
 
@@ -41,6 +41,23 @@ const TYPES = [['', 'All'], ['AR', 'AR'], ['ID', 'ID'], ['IR', 'IR']];
 const SOON = 24;
 
 const KIND = { delivery: 'Delivery', section: 'Section', stage: 'Stage' };
+
+/**
+ * The four segments, in stacking order.
+ *
+ * The order is load-bearing twice over. It reads work-in-flight then
+ * work-not-begun, undated first inside each pair, so the eye lands on the red.
+ * And it keeps the two warm colours apart: red beside orange fails the
+ * normal-vision separation floor outright (delta-E 10.8 against a floor of 15),
+ * so they cannot be neighbours in a stack however sensible the grouping looks.
+ * Validated as this exact sequence; do not re-sort it to taste.
+ */
+const UNDATED_PARTS = [
+  { key: 'runningUndated',    label: 'running, no date',     color: 'var(--status-critical)' },
+  { key: 'runningDated',      label: 'running, dated',       color: 'var(--series-1)' },
+  { key: 'notStartedUndated', label: 'not started, no date', color: 'var(--series-2)' },
+  { key: 'notStartedDated',   label: 'not started, dated',   color: 'var(--series-3)' },
+];
 
 export default function Analytics({ onBack }) {
   const [rows, setRows] = useState(null);
@@ -140,16 +157,16 @@ export default function Analytics({ onBack }) {
       .filter(([n]) => n).sort((a, b) => a[1] - b[1]).map(([n]) => n);
 
     const items = deadlineItems({ projects: keep, sections: mySections, stages });
-    const undated = undatedWork(stages, order);
+    const coverage = dateCoverage(stages, order);
 
     return {
       rows: keep,
       items,
       late: overdue(items),
       soon: dueWithin(items, SOON),
-      undated,
+      coverage,
       team: teamLoad(Object.fromEntries(Object.entries(teams).filter(([id]) => ids.has(id))), keep),
-      head: headline({ items, undated, rows: keep }),
+      head: headline({ items, coverage, rows: keep }),
     };
   }, [rows, subs, sections, teams, type, person]);
 
@@ -209,7 +226,7 @@ export default function Analytics({ onBack }) {
               note="working days, Sundays excluded" />
         <Tile n={model.head.runningUndated} label="Running with no date on it"
               tone={model.head.runningUndated ? 'late' : null}
-              note={`of ${model.head.totalUndated} undated stages in all`} />
+              note={`of ${model.head.running} stages under way`} />
         <Tile n={model.head.live} label="Live projects" note={mine ? `${whose} owns work on these` : 'in view'} />
       </div>
 
@@ -264,28 +281,28 @@ export default function Analytics({ onBack }) {
           )}
         </Figure>
 
-        {/* --------------------------------------------- 2. the unscheduled */}
+        {/* ------------------------------------------- 2. dated and undated */}
         <Figure
-          title="Work with no date on it"
-          claim="Stages that are in scope and unfinished, where neither the stage nor its section carries a date. Split by whether the work has actually begun: a stage running with nothing to measure it against is a different problem from one nobody has started."
-          columns={['Section', 'Running, undated', 'Not started, undated', 'Total']}
-          rows={model.undated.filter((d) => d.value > 0)
-            .map((d) => [d.label, d.inProcess, d.notStarted, d.value])}
-          empty="Every unfinished stage in view carries a date, on itself or on its section."
+          title="What has a date, and what does not"
+          claim="Every unfinished stage in scope, split by whether the work has begun and whether anything holds it to a date — its own target, or a deadline on its section. The left of each bar is work in flight; the red at the very left is the part nothing is holding to a date, and it is the only part that needs acting on today."
+          columns={['Section', 'Running, no date', 'Running, dated',
+                    'Not started, no date', 'Not started, dated', 'Total']}
+          rows={model.coverage.filter((d) => d.value > 0).map((d) => [
+            d.label, d.runningUndated, d.runningDated,
+            d.notStartedUndated, d.notStartedDated, d.value,
+          ])}
+          empty="No unfinished stages are in scope in this view."
         >
           <StackedBars
-            data={model.undated}
+            data={model.coverage}
             unit="stages"
-            parts={[
-              { key: 'inProcess', label: 'running, no date', color: 'var(--status-critical)' },
-              { key: 'notStarted', label: 'not started, no date', color: 'var(--series-1)' },
-            ]}
+            parts={UNDATED_PARTS}
           />
           <p className="figfoot">
             <Dashed size={12} />
-            Most of the second bar is structure the studio has not reached yet, which is
-            normal. The first is the one to act on: work already under way that nothing is
-            holding to a date.
+            Most of the not-started total is structure the studio has not reached yet, which is
+            normal and not a backlog. A stage counts as dated if its section carries a deadline,
+            even without a target of its own.
           </p>
         </Figure>
 
@@ -307,9 +324,10 @@ export default function Analytics({ onBack }) {
 
       <p className="foot">
         <Check size={13} />
-        {model.head.dated} dated {model.head.dated === 1 ? 'commitment' : 'commitments'} and
-        {' '}{model.head.totalUndated} undated {model.head.totalUndated === 1 ? 'stage' : 'stages'}
-        {' '}across {model.rows.length} {model.rows.length === 1 ? 'project' : 'projects'}.
+        {model.head.dated} dated {model.head.dated === 1 ? 'commitment' : 'commitments'} across
+        {' '}{model.rows.length} {model.rows.length === 1 ? 'project' : 'projects'}, holding
+        {' '}{model.head.totalPending - model.head.totalUndated} of
+        {' '}{model.head.totalPending} unfinished stages to a date.
       </p>
     </div>
   );
