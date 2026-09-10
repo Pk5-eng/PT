@@ -24,8 +24,15 @@
  * than raising, so this is a matter of reading them, not of catching.
  */
 
-/** The file to paste into the Supabase SQL editor. Named in every message. */
-export const MIGRATION_FILE = 'MIGRATE_0008_0012.sql';
+/**
+ * The file to paste into the Supabase SQL editor. Named in every message.
+ *
+ * This said MIGRATE_0008_0012.sql, which was deleted when the migration file
+ * was made safe to paste from any state - so every "the database is behind"
+ * message sent an architect looking for a file that is not in the repository.
+ * There is one file now and there is only ever one answer.
+ */
+export const MIGRATION_FILE = 'ALL_MIGRATIONS.sql';
 
 const MISSING = new Set([
   'PGRST202',   // function not found in the schema cache

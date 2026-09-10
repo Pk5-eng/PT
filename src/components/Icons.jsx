@@ -163,3 +163,28 @@ export const Rocket = (p) => (
     <path d="M7.5 16.5 4 20M9.5 13.5 4.5 15M10.5 18.5 9 21" />
   </Svg>
 );
+
+/** Adding a colleague to the roster: the Users figure with a plus beside it. */
+export const UserPlus = (p) => (
+  <Svg {...p}>
+    <path d="M15 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
+    <circle cx="8.5" cy="7" r="3.2" />
+    <path d="M19 8v6M22 11h-6" />
+  </Svg>
+);
+
+/** Archiving one: a box with a lid, because they are put away rather than lost. */
+export const Archive = (p) => (
+  <Svg {...p}>
+    <rect x="3" y="4" width="18" height="4" rx="1" />
+    <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
+    <path d="M10 12h4" />
+  </Svg>
+);
+
+/** Restoring one: the same box, with an arrow coming back out of it. */
+export const Undo = (p) => (
+  <Svg {...p}>
+    <path d="M3 9h11a5 5 0 0 1 0 10H8" /><path d="m7 5-4 4 4 4" />
+  </Svg>
+);

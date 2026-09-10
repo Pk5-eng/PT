@@ -22,7 +22,11 @@ import { Alert, Users, ArrowDown, ArrowUp, Dashed, Check, Clock, Calendar } from
  */
 function Late({ row }) {
   const late = lateness(row);
-  if (!row.substage_name) return <span className="none">—</span>;
+  // A project with nothing in process has no overrun to report, and this cell
+  // was the "—" that said so twice over. It says which silence it is instead:
+  // the substage column that used to carry that wording is gone, and showing
+  // the gaps rather than blanking them is the point (CLAUDE.md).
+  if (!row.substage_name) return <Idle row={row} />;
 
   if (late.late) {
     return (
@@ -64,25 +68,6 @@ function Idle({ row }) {
   const why = idleReason(row);
   const Icon = why === 'All stages done' ? Check : Dashed;
   return <span className="gap"><Icon size={12} />{why}</span>;
-}
-
-function Substage({ row }) {
-  if (!row.substage_name) return <Idle row={row} />;
-  return (
-    <div>
-      <div className="sub-name">
-        {row.substage_name}
-        {row.active_substage_count > 1 && (
-          <span className="more" title={`${row.active_substage_count} substages are in process; this is the most overdue`}>
-            +{row.active_substage_count - 1} more
-          </span>
-        )}
-      </div>
-      {/* MATERIAL SELECTION exists in three stage groups, so the group name is
-          never optional - see spec section 6.6. */}
-      <div className="sub-group">{row.stage_group_name}</div>
-    </div>
-  );
 }
 
 function Team({ team }) {
@@ -136,10 +121,19 @@ export default function Board({ rows, teams, sort, setSort }) {
     <>
       <div className="tablecard">
         <table>
+          {/* Declared widths, so a row is the same shape whatever is in it. The
+              browser's automatic layout sized every column from its longest
+              cell, which meant one project called "Basawaraj Patil, Kalaburagi"
+              and one team of five set the proportions for all 37 rows. */}
+          <colgroup>
+            <col className="c-project" />
+            <col className="c-late" />
+            <col className="c-delivery" />
+            <col className="c-team" />
+          </colgroup>
           <thead>
             <tr>
               <SortHead label="Project" sortKey="name" sort={sort} setSort={setSort} />
-              <SortHead label="Current substage" sortKey="stage" sort={sort} setSort={setSort} />
               <SortHead label="Overdue by" sortKey="overrun" sort={sort} setSort={setSort} Icon={Clock} />
               <SortHead label="Delivery" sortKey="delivery" sort={sort} setSort={setSort} Icon={Calendar} />
               <th>Team</th>
@@ -150,14 +144,15 @@ export default function Board({ rows, teams, sort, setSort }) {
               <tr key={r.id} className={`clickable t-${r.type}${lateness(r).late ? ' late' : ''}`}
                   tabIndex={0} onClick={() => open(r.id)} onKeyDown={(e) => onKey(e, r.id)}>
                 <td>
-                  <div className="pname">{r.name}</div>
+                  {/* Clamped to two lines in a fixed-height row, so the full
+                      name has to live somewhere the mouse can still reach. */}
+                  <div className="pname" title={r.name}>{r.name}</div>
                   <div className="pmeta">
                     <span className={`tag tag-${r.type}`}>{r.type}</span>
                     {r.code && <span>{r.code}</span>}
                     {r.status !== 'ongoing' && <span>{projectStatusLabel(r.status)}</span>}
                   </div>
                 </td>
-                <td><Substage row={r} /></td>
                 <td><Late row={r} /></td>
                 <td><Delivery row={r} /></td>
                 <td><Team team={teams[r.id]} /></td>

@@ -48,13 +48,13 @@ echo "=== 1. a brand new database ==="
 reset
 apply
 check "one paste builds the whole schema" "$(current)" "$READY"
-check "and records all 12 migrations"    "$(q 'select count(*) from schema_migrations')" "12"
+check "and records all 13 migrations"    "$(q 'select count(*) from schema_migrations')" "13"
 
 echo
 echo "=== 2. the same database, pasted again ==="
 apply
 check "still current"            "$(current)" "$READY"
-check "still 12 migrations"      "$(q 'select count(*) from schema_migrations')" "12"
+check "still 13 migrations"      "$(q 'select count(*) from schema_migrations')" "13"
 check "no duplicate policies"    "$(q "select count(*) from pg_policies where schemaname='public' and policyname='read_all' and tablename='projects'")" "1"
 
 echo

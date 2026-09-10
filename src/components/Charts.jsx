@@ -135,25 +135,46 @@ const VALUE_W = 58;
  * `mark` draws a second, thin reference tick - the planned duration - on the
  * same axis as the bar. It is the same measure in the same unit, so it is not a
  * second axis; it is the only honest way to show "84 days against a plan of 18".
+ *
+ * `columns` folds the list into a grid rather than one tall stack. Ten people on
+ * a full-width card produced ten bars the width of the screen, which is a lot of
+ * saturated fill for a figure whose largest number is 15: the ink was arguing
+ * for a significance the data does not have, and the card took a screenful to
+ * say eight things. Folded in two, rank still reads down each column, the scale
+ * is still shared across every bar - `max` is computed over the whole series -
+ * and every bar keeps its direct label. Nothing about what the figure claims
+ * changes; only how much room it takes to claim it.
  */
 export function Bars({ data, unit = '', color = 'var(--series-1)', highlight, max: fixedMax, mark,
-                       labelWidth = LABEL_W }) {
+                       labelWidth = LABEL_W, columns = 1, rowHeight = ROW_H, valueWidth = VALUE_W }) {
   const t = useTooltip();
   const max = Math.max(fixedMax ?? 0, ...data.map((d) => Math.max(d.value, mark?.(d) ?? 0)), 1);
+  // Rank reads DOWN each column and then across, which is only true if the grid
+  // knows how many rows it has. Computed here rather than left to auto-flow,
+  // where a short list would silently start reading left-to-right instead.
+  const perColumn = Math.ceil(data.length / columns);
 
   return (
     <div className="barwrap" ref={t.box}>
       {/* The baseline is drawn by the list itself, as a hairline down the left
           edge of the track column, so it can never drift out of alignment with
           the bars the way a separately positioned axis would. */}
-      <ul className="bars" style={{ '--label-w': `${labelWidth}px`, '--value-w': `${VALUE_W}px` }}>
+      <ul
+        className={`bars${columns > 1 ? ' cols' : ''}`}
+        style={{
+          '--label-w': `${labelWidth}px`,
+          '--value-w': `${valueWidth}px`,
+          '--cols': columns,
+          '--rows': perColumn,
+        }}
+      >
         {data.map((d) => {
           const over = highlight?.(d);
           const planned = mark?.(d);
           return (
             <li
               key={d.id ?? d.label}
-              style={{ height: ROW_H }}
+              style={{ height: rowHeight }}
               onMouseMove={(e) => t.show(e, (
                 <>
                   <strong>{d.label}</strong>

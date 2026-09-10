@@ -23,6 +23,7 @@ boundary.
 | 4 | New project and editing | **built** — slide-over panel, create and edit |
 | 5 | Team load and derived metrics | **built** — the analytics screen. Blocks removed from the product |
 | 6 | Auth and RLS | RLS applied. PWA install dropped by decision — see CLAUDE.md |
+| 7 | The studio roster | **built** — the team panel on the board; migration 0013 |
 
 The five Phase 0 decisions are closed and recorded in `docs/PHASE0_AUDIT.md`. The
 migrations and seed have been run end to end against a real Postgres and all tests pass
@@ -225,6 +226,14 @@ to Supabase.
   PostgREST code and a banner names the migration to run. It deliberately does not treat a
   permission error as schema drift — that would hide an RLS mistake, which is the whole
   authorisation boundary here.
+- **The roster is editable from the board, and the two dangerous columns are not.** Any signed-in
+  member can add a colleague, correct a name or email, and archive or restore someone; `role`
+  and `auth_id` are not writable from the browser by anyone, so nothing on that screen can grant
+  admin, and an admin's row is out of a member's reach. Both are shut by column GRANT rather
+  than by policy text, which is also what makes "send only what changed" load-bearing here: a
+  whole-row update would name `role` and be refused. Removing someone is `active = false` and
+  leaves their assignments alone; the panel says how many live projects still list them.
+  See `supabase/migrations/0013_roster.sql`, asserted in `test/02_rls.sql`.
 - "Blocked by" was removed from the product. The `blocks` table and its rows still exist
   and nothing reads them; dropping it is a deliberate one-line follow-up, not a leftover.
 - Dependencies are fixed by spec: React, Vite, `@supabase/supabase-js`, `date-fns`.

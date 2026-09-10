@@ -55,8 +55,12 @@ between other tasks, not people who will learn a tool.
    `project_substage.target_date`, `project_stage_group.target_date` (the section deadline) and
    `projects.target_delivery`. Nothing but a person knows a promise. Adding a fourth authorable
    date needs the same justification.
-3. **Substages, stage groups and deliverables are never deleted.** Archive with `active = false`.
-   Deleting one silently destroys duration history.
+3. **Substages, stage groups, deliverables and people are never deleted.** Archive with
+   `active = false`. Deleting a substage silently destroys duration history; deleting a person
+   would take every event they stamped with it, and the privilege is revoked outright
+   (0003 for the taxonomy, 0013 for people). Archiving a person deliberately leaves their
+   assignments alone: "Selva has left" and "Selva was never on Ashok Ranka" are different
+   statements and only the first is true.
 4. **A substage never changes stage group** once it has project data. Create a new one instead.
 5. **Colour is decoration.** Every status must be readable as text. The tool exists because the
    previous system stored meaning in colour alone. The palette is deliberately lively, which
@@ -102,8 +106,11 @@ between other tasks, not people who will learn a tool.
 - **Show the gaps.** Twenty of 37 projects have no stage data. They appear on the board as
   "Not set". Never hide an empty row.
 - **Four screens.** Board, Project detail, Analytics ("The numbers"), and the new-project /
-  edit panel that slides over any of them. Admin settings are still unbuilt; the taxonomy is
-  edited in Supabase for now.
+  edit panel that slides over any of them. The team panel on the board is the fifth thing that
+  slides over, not a fifth screen: it adds a person to the roster and archives one, and that is
+  all it does. The rest of the taxonomy - stage groups, substages, deliverables, and anyone's
+  admin role - is still edited in Supabase, and `role` and `auth_id` are not writable from the
+  browser by anybody (migration 0013).
 - **The numbers screen answers exactly three questions**, and the studio chose them: what is
   coming at me and what have I already missed; what work is nobody scheduling; who is carrying
   how much. Its person filter defaults to whoever is signed in, which is what makes the first
@@ -117,8 +124,17 @@ between other tasks, not people who will learn a tool.
   column now, and the elapsed figure lives on the project screen where a start date is visible.
   "On plan" is only written where something exists to be on plan against — a plan, a target or a
   section deadline. A row with none of those says nothing, because nothing is known about it.
-- **The board shows the substage that is stuck, not the first one.** 10 of 17 active projects run
-  several substages at once, so a row reports the most overdue and counts the rest as "+N more".
+- **The board does not name the substage.** It did, in a column of its own, and that column was
+  removed at the studio's request: it was a wide block of uppercase, it wrapped on the long
+  names, and it made every row a different height. The one thing it carried that nothing else
+  did - a project with no work in process, and which silence that is - moved into the
+  "Overdue by" cell, which held a dash on exactly those rows. Below 820px the stacked cards
+  still name it, and count the rest as "+N more", because there is a line to spare there.
+  The project screen is where the substages actually live.
+- **Every board row is the same height, and every column the same width.** Declared widths on a
+  fixed table layout, one row height, and content clamped to two lines with the full text in the
+  cell's title. A table that sizes itself from its contents lets one long project name set the
+  proportions for all 37 rows.
 
 ## Explicitly out of scope
 

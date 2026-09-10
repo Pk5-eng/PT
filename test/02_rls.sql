@@ -45,8 +45,10 @@ select expect('member reads all 37 projects', (select count(*)=37 from projects)
 select expect('member reads the board',       (select count(*)=37 from v_board));
 select refused('member cannot add a substage',
   'insert into substages (stage_group_id,name,seq) values ((select id from stage_groups limit 1),''X'',99)');
-select refused('member cannot add a person',
-  'insert into people (name) values (''Intruder'')');
+select refused('member cannot promote anyone',
+  'update people set role=''admin'' where name=''Niharika''');
+select refused('member cannot claim another identity',
+  'update people set auth_id=''33333333-3333-3333-3333-333333333333'' where name=''Madhu''');
 select refused('member cannot delete a substage', 'delete from substages');
 select refused('member cannot delete an event',   'delete from events');
 select refused('member cannot forge an event',
@@ -137,6 +139,57 @@ select expect('a member''s delete removes no project',
 select expect('and its substages are still there',
   (select count(*) > 20 from project_substage
     where project_id = (select id from projects where name = 'RLS TEST PROJECT')));
+reset role;
+
+\echo ''
+\echo '=== the studio roster (opened to members by 0013) ==='
+set role authenticated;
+select test_become('22222222-2222-2222-2222-222222222222');
+
+-- Adding a colleague is everyday work now, not an admin act. The panel on the
+-- board sends exactly this.
+insert into people (name, email) values ('Recruit', 'recruit@example.test');
+select expect('member can add a person',
+  (select count(*) = 1 from people where name = 'Recruit'));
+select expect('and the new person is a member, never an admin',
+  (select role = 'member' and active from people where name = 'Recruit'));
+
+-- The two shut columns. Both are refused by the GRANT rather than by a policy,
+-- so the statement raises instead of quietly matching no rows.
+select refused('member cannot add an admin',
+  'insert into people (name, role) values (''Usurper'', ''admin'')');
+select refused('member cannot set auth_id on the way in',
+  'insert into people (name, auth_id) values (''Ghost'', ''44444444-4444-4444-4444-444444444444'')');
+
+-- Removing someone is an archive. The row stays, because assignments and
+-- events point at it.
+update people set active = false where name = 'Recruit';
+select expect('member can archive a person',
+  (select not active from people where name = 'Recruit'));
+update people set active = true where name = 'Recruit';
+select expect('and restore them again',
+  (select active from people where name = 'Recruit'));
+select refused('but nobody deletes a person', 'delete from people where name = ''Recruit''');
+
+-- An admin's row is out of a member's reach. This one is enforced by the
+-- policy, so the update matches no rows and raises nothing: assert the row,
+-- not an exception.
+update people set active = false where name = 'Madhu';
+select expect('a member cannot archive an admin',
+  (select active from people where name = 'Madhu'));
+update people set name = 'Not Madhu' where name = 'Madhu';
+select expect('nor rename one',
+  (select count(*) = 1 from people where name = 'Madhu'));
+reset role;
+
+\echo ''
+\echo '=== and an admin still has the whole roster ==='
+set role authenticated;
+select test_become('11111111-1111-1111-1111-111111111111');
+update people set active = false where name = 'Recruit';
+select expect('admin can archive anyone', (select not active from people where name = 'Recruit'));
+select refused('but not even an admin sets a role from the browser',
+  'update people set role = ''admin'' where name = ''Recruit''');
 reset role;
 
 \echo ''

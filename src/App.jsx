@@ -6,12 +6,13 @@ import SignIn from './components/SignIn.jsx';
 import ProjectDetail from './components/ProjectDetail.jsx';
 import Analytics from './components/Analytics.jsx';
 import ProjectPanel from './components/ProjectPanel.jsx';
+import TeamPanel from './components/TeamPanel.jsx';
 import SchemaNotice from './components/SchemaNotice.jsx';
 import { boardIsBehind } from './lib/schema.js';
 import { useRefreshOnReturn } from './lib/live.js';
 import { useRoute, toBoard, toAnalytics, toProject } from './lib/route.js';
 import {
-  Search, X, Alert, Folder, Dashed, LogOut, Inbox, Plus, ChartIcon, Rocket, Clock,
+  Search, X, Alert, Folder, Dashed, LogOut, Inbox, Plus, ChartIcon, Rocket, Clock, Users,
 } from './components/Icons.jsx';
 
 /* A stable empty array. Passed as `team` when creating, where there is no team
@@ -76,6 +77,7 @@ export default function App() {
   const [names, setNames] = useState([]);            // names only, for the filter
   const [error, setError] = useState(null);
   const [creating, setCreating] = useState(false);
+  const [teamOpen, setTeamOpen] = useState(false);   // the studio team panel
   const [behind, setBehind] = useState(false);   // database older than this app
   const route = useRoute();
 
@@ -137,7 +139,7 @@ export default function App() {
   // A board tab stays open for days in a studio of ten. Refreshed when its
   // person comes back to it, never on a timer and never while the new-project
   // panel is open on top of it.
-  const markFresh = useRefreshOnReturn(load, { paused: creating });
+  const markFresh = useRefreshOnReturn(load, { paused: creating || teamOpen });
   useEffect(() => { if (rows) markFresh(); }, [rows, markFresh]);
 
   // "/" focuses search, "n" opens the new-project panel, Escape clears search.
@@ -153,12 +155,12 @@ export default function App() {
       const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === '/' && !typing) { e.preventDefault(); searchRef.current?.focus(); }
-      if (e.key === 'n' && !typing && !behind) { e.preventDefault(); setCreating(true); }
+      if (e.key === 'n' && !typing && !behind && !teamOpen) { e.preventDefault(); setCreating(true); }
       if (e.key === 'Escape' && typing) { setQuery(''); e.target.blur(); }
     };
     window.addEventListener('keydown', on);
     return () => window.removeEventListener('keydown', on);
-  }, [onBoard, behind]);
+  }, [onBoard, behind, teamOpen]);
 
   // Scoped = search, type and person. The card numbers are computed from this,
   // so they do not move when you click one of them.
@@ -224,6 +226,10 @@ export default function App() {
               : `${visible.length} of ${rows.length}`) : ''}
           </span>
           <span className="spacer" />
+          <button className="btn ghost" onClick={() => setTeamOpen(true)} title="The studio team"
+                  aria-label="The studio team">
+            <Users size={15} /><span className="full">Team</span>
+          </button>
           <button className="btn ghost" onClick={toAnalytics} title="The numbers"
                   aria-label="The numbers">
             <ChartIcon size={15} /><span className="full">Numbers</span>
@@ -328,6 +334,12 @@ export default function App() {
           in weeks is read as six days to the week.
         </p>
       </div>
+
+      <TeamPanel
+        open={teamOpen}
+        onClose={() => setTeamOpen(false)}
+        onChanged={load}
+      />
 
       <ProjectPanel
         open={creating}

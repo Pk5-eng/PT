@@ -321,7 +321,7 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
 .tablecard thead th .arrow.off { opacity: 0; }
 .tablecard thead th.sortable button:hover .arrow.off { opacity: .4; }
 
-.tablecard tbody td { padding: 13px 14px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+.tablecard tbody td { padding: 11px 14px; border-bottom: 1px solid var(--line-2); vertical-align: middle; }
 .tablecard tbody tr:last-child td { border-bottom: 0; }
 .tablecard tbody tr td:first-child { box-shadow: inset 3px 0 0 var(--edge, transparent); }
 .tablecard tbody tr.t-AR { --edge: var(--ar); }
@@ -848,7 +848,7 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
   .rowcard .line3 span { display: inline-flex; align-items: center; gap: 5px; }
   .group > h2 { flex-wrap: wrap; }
   .deadline { width: 100%; }
-  .bars li { grid-template-columns: 1fr; gap: 2px; height: auto !important; padding: 7px 0; }
+  .bars li { grid-template-columns: 1fr; gap: 2px; height: auto !important; padding: 7px 0; margin: 0; }
   .bars .track { height: 14px; }
   .bars .val { text-align: left; }
   .panel { width: 100vw; }
@@ -961,3 +961,159 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
 /* "On plan" is only said where something exists to be on plan against; a row
    with no plan, target or deadline says nothing at all. */
 .onplan { color: var(--ok); font-size: 13px; font-weight: 550; }
+
+/* ------------------------------------------------------------- the team --- */
+/* The studio roster panel. Adding a colleague is a two-field act and lives at
+   the top, where the eye lands; the list below is people, not settings, so it
+   reads as names with what they carry rather than as a table of fields. */
+.panel form.roster-add { display: block; flex: 0 0 auto; margin-bottom: 16px; }
+.roster-add .rrow { display: flex; gap: 8px; align-items: center; }
+.roster-add input {
+  flex: 1 1 0; min-width: 0; min-height: var(--tap); padding: 0 12px; font-size: 14px;
+  border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--ink);
+  transition: border-color .13s var(--ease), box-shadow .13s var(--ease);
+}
+.roster-add input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.roster-add .btn { flex: 0 0 auto; }
+.roster-add em { display: block; font-style: normal; font-size: 11.5px; color: var(--ink-3); margin-top: 7px; }
+
+.roster { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+.rperson {
+  display: flex; align-items: center; gap: 10px; padding: 9px 11px;
+  border-bottom: 1px solid var(--line-2); background: var(--surface);
+}
+.rperson:last-child { border-bottom: 0; }
+/* Someone who has left is dimmed but never hidden: their name is still on the
+   projects they worked on, and this row is what explains it. */
+.rperson.gone { background: var(--surface-2); }
+.rperson.gone .rname { color: var(--ink-3); text-decoration: line-through; text-decoration-thickness: 1px; }
+.rwho { flex: 1 1 auto; min-width: 0; }
+.rname { display: block; font-size: 13.5px; font-weight: 550; overflow-wrap: anywhere; }
+.rmeta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 3px; font-size: 11.5px; color: var(--ink-3); }
+.remail { overflow-wrap: anywhere; }
+.rload { white-space: nowrap; }
+.rrole {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  border-radius: 4px; padding: 1px 6px;
+  color: var(--brand); background: var(--brand-soft); border: 1px solid var(--brand-line);
+}
+.rrole.you { color: var(--ink-2); background: var(--surface-2); border-color: var(--line); }
+.rrole.off { color: var(--late); background: var(--late-bg); border-color: var(--late-line); }
+.racts { display: flex; gap: 5px; flex: 0 0 auto; }
+.btn.sm { min-height: 30px; padding: 0 9px; font-size: 12.5px; gap: 5px; }
+.btn.sm.icon { padding: 0; width: 30px; }
+.rperson.editing { display: block; padding: 11px; background: var(--brand-soft); }
+.rfields { display: grid; gap: 7px; }
+.rfields input {
+  width: 100%; min-height: 34px; padding: 0 10px; font-size: 13.5px;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); color: var(--ink);
+}
+.rfields input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px #fff; }
+.rperson.editing .racts { justify-content: flex-end; margin-top: 9px; }
+.rwhy { display: flex; align-items: center; gap: 5px; font-size: 11.5px; }
+.rwhy.err { color: var(--late); }
+
+/* A write that landed, said out loud. Optimism that is never confirmed reads as
+   nothing having happened. */
+.saidso {
+  display: flex; align-items: flex-start; gap: 7px; margin: 0 0 14px;
+  font-size: 12.5px; color: var(--ok);
+  background: var(--ok-bg); border: 1px solid var(--ok-line);
+  border-radius: var(--r-sm); padding: 8px 10px; line-height: 1.5;
+}
+.saidso svg { flex: 0 0 auto; margin-top: 1px; }
+
+/* ------------------------------------------------- one row, one size --- */
+/* Every board row is now the same height, and every column the same width,
+   whatever is in them.
+ *
+ * They were not. The table sized itself from its contents, so a project called
+ * "Basawaraj Patil, Kalaburagi" widened the name column for all 37 rows, a
+ * substage that wrapped made its row two lines taller than its neighbours, and
+ * scanning down the board meant re-finding the same column at a different
+ * height on every row. Density is a stated rule here (see the head of this
+ * file) and an even grid is most of what density buys.
+ *
+ * The height is fixed rather than merely evened out, so a row does not change
+ * size when a status moves and the row below it does not jump. Content that
+ * would exceed it is clamped to two lines with the full text in the cell's
+ * title, never truncated to nothing.
+ *
+ * "Current substage" is gone from this table entirely, asked for and agreed:
+ * the column read as a wide block of uppercase and it is one click away on the
+ * project screen. What it carried that nothing else did - a project with no
+ * work in process, and why - moved into the "Overdue by" cell, which held a
+ * dash on exactly those rows. The narrow-screen cards still carry the substage
+ * on their second line, where there is a line to spare. */
+.tablecard table { table-layout: fixed; }
+.tablecard col.c-project  { width: 33%; }
+.tablecard col.c-late     { width: 20%; }
+.tablecard col.c-delivery { width: 16%; }
+.tablecard col.c-team     { width: 31%; }
+
+.tablecard tbody td { height: 66px; }
+
+/* Two lines at most, and the second one ends in an ellipsis rather than a cut.
+   -webkit-box is the only clamp with support everywhere this runs. */
+.tablecard .pname, .tablecard .team {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.tablecard .pmeta { flex-wrap: nowrap; overflow: hidden; }
+.tablecard .pmeta span:not(.tag) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tablecard .gap { white-space: nowrap; max-width: 100%; overflow: hidden; }
+
+/* A ranked list folded into columns. Rank reads down each column and then
+   across, which is why the row count is set rather than left to auto-flow: with
+   flow alone a short list reads left to right and the order silently inverts.
+   The scale is shared - one max over the whole series - so a bar in the right
+   column is still comparable with one in the left. */
+.bars.cols {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows, 1), auto);
+  grid-auto-flow: column;
+  column-gap: 28px;
+}
+/* The hover tint would otherwise stop dead at the column edge, halfway across
+   the gutter. */
+.bars.cols li { padding: 0 4px; margin: 0 -4px; }
+
+/* The numbers screen's heading and its filters, on one line.
+ *
+ * The heading block keeps its 62ch measure and the controls take the space to
+ * its right, which was empty on every screen wider than about 900px. They align
+ * to the bottom of the heading rather than the top, so the row of controls sits
+ * on the same baseline as the last line of the lede instead of floating beside
+ * the title.
+ *
+ * These scope all three figures, so they stay above all three. Moving them into
+ * the first figure's card would read as filtering that figure alone. */
+.numbers-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 20px 28px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.numbers-head .detail-head { flex: 1 1 420px; padding-bottom: 0; }
+.numbers-head .toolbar.scoping {
+  flex: 0 1 auto; margin: 0 0 4px; justify-content: flex-end;
+}
+
+@media (max-width: 820px) {
+  /* Under 820 the lede alone fills the width, so there is no space to move the
+     controls into and they go back under it. */
+  .numbers-head { display: block; margin-bottom: 14px; }
+  .numbers-head .detail-head { padding-bottom: 6px; }
+  .numbers-head .toolbar.scoping { justify-content: flex-start; margin: 0 0 14px; }
+}
+
+/* One column on a narrow screen: two columns of bar are two columns of nothing
+   once the track is 90px wide.
+ *
+ * This has to sit at the END of the file, after `.bars.cols` itself. The
+ * override lived inside the 820px block further up and lost - same specificity,
+ * later rule wins - so the grid stayed two columns all the way down to a phone
+ * and nobody would have seen it from reading either rule alone. */
+@media (max-width: 820px) {
+  .bars.cols { display: block; }
+}

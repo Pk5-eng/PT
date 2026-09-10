@@ -189,35 +189,44 @@ export default function Analytics({ onBack }) {
 
   return (
     <div className="wrap">
-      <header className="detail-head">
-        <button className="btn ghost tight" onClick={onBack}><ArrowLeft size={15} />All projects</button>
-        <h1>The numbers</h1>
-        <p className="lede">
-          Every duration is counted in working days: Sundays are excluded, and a planned
-          duration in weeks is read as six days to the week. Nothing here is inferred — a
-          date nobody set is reported as missing, never guessed at.
-        </p>
-      </header>
+      {/* The lede is set to 62ch and the controls were a full-width row under it,
+          so the top of this screen was a paragraph beside a third of a metre of
+          nothing, and then a bar of controls. They share the line now: the
+          sentence keeps its measure, the filters take the space it was not
+          using, and the first figure starts higher up the page. They still
+          scope all three figures, which is why they sit above all three and not
+          inside the first. */}
+      <div className="numbers-head">
+        <header className="detail-head">
+          <button className="btn ghost tight" onClick={onBack}><ArrowLeft size={15} />All projects</button>
+          <h1>The numbers</h1>
+          <p className="lede">
+            Every duration is counted in working days: Sundays are excluded, and a planned
+            duration in weeks is read as six days to the week. Nothing here is inferred — a
+            date nobody set is reported as missing, never guessed at.
+          </p>
+        </header>
+
+        <div className="toolbar scoping">
+          <select className="select" value={person ?? ''} onChange={(e) => setPerson(e.target.value)}
+                  aria-label="Whose work to show">
+            <option value="">Everyone</option>
+            {people.map((p) => <option key={p} value={p}>{p}{p === me ? ' (you)' : ''}</option>)}
+          </select>
+          <div className="seg" role="group" aria-label="Filter by discipline">
+            {TYPES.map(([v, l]) => (
+              <button key={v || 'all'} aria-pressed={type === v} onClick={() => setType(v)}>{l}</button>
+            ))}
+          </div>
+          <span className="scope num">
+            {model.rows.length} {model.rows.length === 1 ? 'project' : 'projects'}
+          </span>
+        </div>
+      </div>
 
       {behind && (
         <SchemaNotice what="Section deadlines are missing from the figures below until it is applied — the table that holds them does not exist yet." />
       )}
-
-      <div className="toolbar">
-        <select className="select" value={person ?? ''} onChange={(e) => setPerson(e.target.value)}
-                aria-label="Whose work to show">
-          <option value="">Everyone</option>
-          {people.map((p) => <option key={p} value={p}>{p}{p === me ? ' (you)' : ''}</option>)}
-        </select>
-        <div className="seg" role="group" aria-label="Filter by discipline">
-          {TYPES.map(([v, l]) => (
-            <button key={v || 'all'} aria-pressed={type === v} onClick={() => setType(v)}>{l}</button>
-          ))}
-        </div>
-        <span className="scope num">
-          {model.rows.length} {model.rows.length === 1 ? 'project' : 'projects'}
-        </span>
-      </div>
 
       <div className="tiles">
         <Tile n={model.head.overdue} label="Deadlines already missed" tone={model.head.overdue ? 'late' : null}
@@ -314,7 +323,12 @@ export default function Analytics({ onBack }) {
           rows={model.team.map((d) => [d.label, d.value])}
           empty="Nobody is assigned to a live project in this view."
         >
-          <Bars data={model.team} unit="live projects" color="var(--series-4)" labelWidth={150} />
+          {/* Folded into two columns, and shorter rows. One bar per person down
+              a 1100px card was a screenful of saturated fill for eight numbers,
+              none of them above 15; the same eight now sit in four rows without
+              losing the shared scale, the rank order or a single direct label. */}
+          <Bars data={model.team} unit="live projects" color="var(--series-4)"
+                labelWidth={108} valueWidth={34} rowHeight={26} columns={2} />
           <p className="figfoot">
             <Users size={12} />
             One project counts once per person, whatever their role code on it.
