@@ -15,7 +15,7 @@
     "seed:sql": "node scripts/seed.mjs --emit-sql",
     "test": "npm run test:js && ./test/run.sh",
     "build:migrations": "./scripts/build-migrations.sh",
-    "test:js": "node --test 'test/js/*.test.mjs'",
+    "test:js": "node --test test/js/*.test.mjs",
     "test:sql": "./test/run.sh && ./test/converge.sh",
     "test:converge": "./test/converge.sh"
   },
@@ -26,7 +26,7 @@
     "react-dom": "^18.3.1"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",

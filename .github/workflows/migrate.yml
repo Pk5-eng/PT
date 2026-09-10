@@ -60,11 +60,19 @@ jobs:
       PGURL: postgresql://postgres:postgres@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
+      # 22, not 20. @supabase/supabase-js requires >=22 and npm was warning
+      # EBADENGINE on every one of the six packages it pulls in.
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       - run: npm ci
 
+      # This step failed on every run this workflow has ever had, in one second,
+      # which meant the migrate job below has never executed and the live
+      # database has never been migrated by CI. The cause was a quoted glob in
+      # `test:js`: Node 22 expands one, Node 20 does not, so it passed on a
+      # laptop and could not pass here. The shell expands it now, which every
+      # version of both agrees on.
       - name: Unit tests
         run: npm run test:js
 
