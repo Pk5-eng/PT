@@ -285,6 +285,11 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
 }
 
 /* ---------------------------------------------------------------- table --- */
+/* Every rule here is scoped to .tablecard on purpose. They were written bare -
+   `table`, `thead th`, `tbody tr.late` - and applied to every table in the app,
+   so the deadline list on the analytics screen inherited the board's sticky
+   grey header and its coloured row edge, and a late deadline row grew a red bar
+   it never asked for. A style written for one component should name it. */
 /* No `overflow: hidden` here, however tempting for the rounded corners: an
    overflow ancestor makes `position: sticky` on the header a no-op, and the
    column titles silently disappear the moment you scroll. The corners are
@@ -293,40 +298,40 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
   background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--r); box-shadow: var(--shadow);
 }
-thead th:first-child, thead th:first-child button { border-top-left-radius: var(--r); }
-thead th:last-child { border-top-right-radius: var(--r); }
-tbody tr:last-child td:first-child { border-bottom-left-radius: var(--r); }
-tbody tr:last-child td:last-child { border-bottom-right-radius: var(--r); }
-table { width: 100%; border-collapse: collapse; }
-thead th {
+.tablecard thead th:first-child, .tablecard thead th:first-child button { border-top-left-radius: var(--r); }
+.tablecard thead th:last-child { border-top-right-radius: var(--r); }
+.tablecard tbody tr:last-child td:first-child { border-bottom-left-radius: var(--r); }
+.tablecard tbody tr:last-child td:last-child { border-bottom-right-radius: var(--r); }
+.tablecard table { width: 100%; border-collapse: collapse; }
+.tablecard thead th {
   position: sticky; top: var(--header-h); z-index: 5;
   text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em;
   color: var(--ink-3); font-weight: 700; padding: 11px 14px;
   background: var(--surface-2); border-bottom: 1px solid var(--line);
   white-space: nowrap;
 }
-thead th.sortable { padding: 0; }
-thead th.sortable button {
+.tablecard thead th.sortable { padding: 0; }
+.tablecard thead th.sortable button {
   width: 100%; display: flex; align-items: center; gap: 5px;
   padding: 11px 14px; border: 0; background: none; cursor: pointer;
   font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit;
 }
-thead th.sortable button:hover { color: var(--brand); background: var(--brand-soft); }
-thead th .arrow { color: var(--brand); }
-thead th .arrow.off { opacity: 0; }
-thead th.sortable button:hover .arrow.off { opacity: .4; }
+.tablecard thead th.sortable button:hover { color: var(--brand); background: var(--brand-soft); }
+.tablecard thead th .arrow { color: var(--brand); }
+.tablecard thead th .arrow.off { opacity: 0; }
+.tablecard thead th.sortable button:hover .arrow.off { opacity: .4; }
 
-tbody td { padding: 13px 14px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
-tbody tr:last-child td { border-bottom: 0; }
-tbody tr td:first-child { box-shadow: inset 3px 0 0 var(--edge, transparent); }
-tbody tr.t-AR { --edge: var(--ar); }
-tbody tr.t-ID { --edge: var(--id); }
-tbody tr.t-IR { --edge: var(--ir); }
-tbody tr.clickable { cursor: pointer; transition: background .1s var(--ease); }
-tbody tr.clickable:hover { background: var(--surface-2); }
-tbody tr.late { background: var(--late-bg); --edge: var(--late); }
-tbody tr.late.clickable:hover { background: #fbe7e4; }
-tbody tr:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.tablecard tbody td { padding: 13px 14px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+.tablecard tbody tr:last-child td { border-bottom: 0; }
+.tablecard tbody tr td:first-child { box-shadow: inset 3px 0 0 var(--edge, transparent); }
+.tablecard tbody tr.t-AR { --edge: var(--ar); }
+.tablecard tbody tr.t-ID { --edge: var(--id); }
+.tablecard tbody tr.t-IR { --edge: var(--ir); }
+.tablecard tbody tr.clickable { cursor: pointer; transition: background .1s var(--ease); }
+.tablecard tbody tr.clickable:hover { background: var(--surface-2); }
+.tablecard tbody tr.late { background: var(--late-bg); --edge: var(--late); }
+.tablecard tbody tr.late.clickable:hover { background: #fbe7e4; }
+.tablecard tbody tr:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 
 .pname { font-weight: 600; letter-spacing: -0.01em; }
 .pmeta { font-size: 12px; color: var(--ink-3); margin-top: 4px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
@@ -914,3 +919,36 @@ tbody tr:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; 
   box-shadow: inset 0 0 0 1px var(--brand-soft);
 }
 .deadline.pending .rel { opacity: .55; }
+
+/* Stacked bars: a 2px gap of surface between segments, never a border. */
+.bars.stacked .track { gap: 2px; }
+.bars.stacked .seg { display: block; border-radius: 2px; }
+.bars.stacked li .track > .seg:last-child { border-radius: 2px 4px 4px 2px; }
+.bars.stacked li .track > .seg:first-child { border-radius: 0 2px 2px 0; }
+.bars.stacked li .track > .seg:only-child { border-radius: 0 4px 4px 0; }
+
+/* The deadline list. A schedule is a list, not a chart: dates read as dates. */
+.dates { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.dates th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em;
+            color: var(--ink-3); font-weight: 700; padding: 0 10px 8px 0; }
+.dates td { padding: 9px 10px 9px 0; border-top: 1px solid var(--line-2); vertical-align: top; }
+.dates tr.late td { background: var(--late-bg); }
+.dates .when { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+.dates tr.late .when { color: var(--late); }
+.dates .rel { display: block; font-size: 11.5px; font-weight: 500; color: var(--ink-3); margin-top: 2px; }
+.dates tr.late .rel { color: var(--late); }
+.dates .what { font-weight: 550; }
+.dates .where { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+.kind {
+  display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; border-radius: 4px; padding: 1px 6px; white-space: nowrap;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2);
+}
+.kind.k-delivery { color: var(--brand); background: var(--brand-soft); border-color: var(--brand-line); }
+.kind.k-section  { color: var(--id); background: var(--id-bg); border-color: #c9e5e1; }
+
+/* The three figures read top to bottom: a schedule, then what is missing from
+   it, then who is carrying it. One column, because the first is a list and a
+   list squeezed into half a screen wraps its dates. */
+.figs.one { grid-template-columns: 1fr; }
+.toolbar .scope { color: var(--ink-3); font-size: 13px; margin-left: 2px; }

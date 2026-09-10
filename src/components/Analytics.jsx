@@ -1,85 +1,99 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
-import { Figure, Bars, Trend, Composition, Tile, Key } from './Charts.jsx';
-import { projectStatusLabel } from '../lib/format.js';
-import { plannedWorkingDays } from '../lib/workdays.js';
+import { Figure, Bars, StackedBars, Tile } from './Charts.jsx';
+import { statusLabel, shortDate, dueWording } from '../lib/format.js';
+import { isSchemaBehind } from '../lib/schema.js';
+import SchemaNotice from './SchemaNotice.jsx';
 import {
-  spendByProject, overdueByProject, sectionLoad, teamLoad,
-  throughput, statusMix, headline, daysSpent,
+  deadlineItems, overdue, dueWithin, undatedWork, teamLoad, headline,
 } from '../lib/analytics.js';
-import { Alert, ArrowLeft, Clock, Check, TrendIcon } from './Icons.jsx';
+import { Alert, ArrowLeft, Calendar, Users, Dashed, Check } from './Icons.jsx';
 
 /**
  * The numbers screen.
  *
- * It answers five questions, in the order the studio asks them: how much work
- * is late, where the live work is sitting, who is carrying it, how much has
- * actually been spent on each project, and whether anything is coming out the
- * other end.
+ * Three questions, which are the three the studio asked for:
  *
- * SUNDAYS ARE NOT COUNTED anywhere on this screen. That was the explicit ask
- * and it is applied to the board too, so the two never disagree.
+ *   what is coming at me, and what have I already missed
+ *   what work is nobody scheduling
+ *   who is carrying how much
  *
- * NO PERCENT COMPLETE, and nothing derived from a fee stage. Every figure here
- * is a count of something that happened - a substage moved, a day elapsed, a
- * person assigned - and the append-only events table is what several of them
- * are read from, which is why it is append-only.
+ * SUNDAYS ARE NOT COUNTED, here or anywhere else in the app.
  *
- * The filters sit in one row above every figure and scope all of them at once.
- * A per-chart filter would let two figures on one screen describe two different
- * sets of projects, which is how a dashboard starts lying.
+ * NOTHING IS INFERRED. A stage with no date does not borrow its section's, a
+ * section does not borrow the project's delivery date, and an absent date is
+ * reported as an absence rather than filled in. The second figure exists
+ * precisely to count those absences, and it would be measuring its own guesses
+ * if the first figure had already papered over them.
+ *
+ * NO PERCENT COMPLETE and nothing derived from a fee stage. Every figure is a
+ * count of something a person actually recorded.
+ *
+ * The filters sit in one row above every figure and scope all three at once.
+ * The person filter defaults to whoever is signed in - that is what makes the
+ * first figure a personal snapshot rather than a studio-wide list - and moving
+ * it to "Anyone" turns the same three figures into the principal's view.
  */
 
 const TYPES = [['', 'All'], ['AR', 'AR'], ['ID', 'ID'], ['IR', 'IR']];
 
-const STATUS_ORDER = ['ongoing', 'hold', 'not_confirmed', 'npp', 'completed', 'cancelled'];
+/** Four working weeks. The horizon a studio actually plans against. */
+const SOON = 24;
 
-// Categorical slots, assigned in fixed order and never cycled. The ordering is
-// what keeps neighbouring slots separable under colour-vision deficiency, so it
-// is not cosmetic and must not be re-sorted to taste.
-const SERIES = [
-  'var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)',
-  'var(--series-5)', 'var(--series-6)',
-];
+const KIND = { delivery: 'Delivery', section: 'Section', stage: 'Stage' };
 
 export default function Analytics({ onBack }) {
   const [rows, setRows] = useState(null);
   const [subs, setSubs] = useState([]);
+  const [sections, setSections] = useState([]);
   const [teams, setTeams] = useState({});
-  const [events, setEvents] = useState([]);
+  const [me, setMe] = useState(null);
+  const [behind, setBehind] = useState(false);
   const [error, setError] = useState(null);
 
   const [type, setType] = useState('');
-  const [person, setPerson] = useState('');
+  const [person, setPerson] = useState(null);      // null = not yet defaulted
 
   const load = useCallback(async () => {
-    const [board, ps, ev, as] = await Promise.all([
+    // Returns this user's row in `people`, which is what makes the default view
+    // personal. Harmless to call again; the app calls it on every board load.
+    const { data: myId } = await supabase.rpc('link_my_identity');
+
+    const [board, ps, as, psg, who] = await Promise.all([
       supabase.from('v_board').select('*'),
       supabase
         .from('project_substage')
-        .select('project_id, status, started_on, concluded_on, substages(name, planned_weeks, stage_groups(name, seq))'),
-      // 2000 is comfortably more than the studio will generate in a decade and
-      // stops one runaway import from making this screen unloadable.
-      supabase.from('events').select('to_status, at').order('at', { ascending: false }).limit(2000),
-      supabase.from('assignments').select('project_id, role_code, people(id, name)'),
+        .select('id, project_id, status, target_date, substages(name, stage_groups(name, seq))'),
+      supabase.from('assignments').select('project_id, person_id, role_code, people(id, name)'),
+      supabase.from('project_stage_group').select('id, project_id, target_date, stage_groups(name, seq)'),
+      myId ? supabase.from('people').select('id, name').eq('id', myId).single() : { data: null },
     ]);
 
-    const failed = [board, ps, ev, as].find((r) => r.error);
+    const failed = [board, ps, as].find((r) => r.error);
     if (failed) return setError(failed.error.message);
     setError(null);
+    setBehind(isSchemaBehind(psg.error));
+
+    const projectName = Object.fromEntries(board.data.map((r) => [r.id, r.name]));
 
     setRows(board.data);
     setSubs(ps.data.map((r) => ({
+      id: r.id,
       project_id: r.project_id,
+      project: projectName[r.project_id] ?? '—',
       status: r.status,
-      started_on: r.started_on,
-      concluded_on: r.concluded_on,
-      planned_weeks: r.substages?.planned_weeks ?? null,
+      target_date: r.target_date,
       substage: r.substages?.name ?? null,
       section: r.substages?.stage_groups?.name ?? null,
       section_seq: r.substages?.stage_groups?.seq ?? 99,
     })));
-    setEvents(ev.data);
+    setSections((psg.data ?? []).map((r) => ({
+      id: r.id,
+      project_id: r.project_id,
+      project: projectName[r.project_id] ?? '—',
+      section: r.stage_groups?.name ?? 'Section',
+      target_date: r.target_date,
+    })));
 
     const byProject = {};
     for (const a of as.data) {
@@ -87,60 +101,57 @@ export default function Analytics({ onBack }) {
       (byProject[a.project_id] ||= []).push({ name: a.people.name, role: a.role_code });
     }
     setTeams(byProject);
+    setMe(who?.data?.name ?? null);
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
+  // Default to the signed-in person once, and only if they actually own work.
+  // Someone with no projects would otherwise land on an empty screen and have
+  // to work out that it was a filter rather than the truth.
   const people = useMemo(
-    () => [...new Set(Object.values(teams).flat().map((t) => t.name))].sort(),
-    [teams]);
+    () => [...new Set(Object.values(teams).flat().map((t) => t.name))].sort(), [teams]);
+  useEffect(() => {
+    if (person !== null || people.length === 0) return;
+    setPerson(me && people.includes(me) ? me : '');
+  }, [me, people, person]);
 
-  // One filtered set, derived once, feeding every figure below.
-  const scoped = useMemo(() => {
-    if (!rows) return null;
+  const model = useMemo(() => {
+    if (!rows || person === null) return null;
+
     const keep = rows.filter((r) =>
       (!type || r.type === type) &&
       (!person || (teams[r.id] ?? []).some((t) => t.name === person)));
     const ids = new Set(keep.map((r) => r.id));
+
+    const myStages = subs.filter((s) => ids.has(s.project_id));
+    const mySections = sections.filter((s) => ids.has(s.project_id));
+
+    // A stage sitting under a dated section is scheduled even without a date of
+    // its own, so undatedWork() needs to know. Nothing is inferred onto the
+    // stage itself - this only marks that a commitment covers it.
+    const sectionDate = new Map(
+      mySections.filter((s) => s.target_date).map((s) => [`${s.project_id}::${s.section}`, s.target_date]));
+    const stages = myStages.map((s) => ({
+      ...s, section_target: sectionDate.get(`${s.project_id}::${s.section}`) ?? null,
+    }));
+
+    const order = [...new Map(subs.map((s) => [s.section, s.section_seq]))]
+      .filter(([n]) => n).sort((a, b) => a[1] - b[1]).map(([n]) => n);
+
+    const items = deadlineItems({ projects: keep, sections: mySections, stages });
+    const undated = undatedWork(stages, order);
+
     return {
       rows: keep,
-      subs: subs.filter((s) => ids.has(s.project_id)),
-      teams: Object.fromEntries(Object.entries(teams).filter(([id]) => ids.has(id))),
+      items,
+      late: overdue(items),
+      soon: dueWithin(items, SOON),
+      undated,
+      team: teamLoad(Object.fromEntries(Object.entries(teams).filter(([id]) => ids.has(id))), keep),
+      head: headline({ items, undated, rows: keep }),
     };
-  }, [rows, subs, teams, type, person]);
-
-  const model = useMemo(() => {
-    if (!scoped) return null;
-    const subsByProject = {};
-    for (const s of scoped.subs) (subsByProject[s.project_id] ||= []).push(s);
-
-    const sections = [...new Map(
-      subs.map((s) => [s.section, s.section_seq]))
-    ].filter(([n]) => n).sort((a, b) => a[1] - b[1]).map(([n]) => n);
-
-    // Planned working days for a project: the sum of the plans of the sections
-    // it is actually running. Only shown where every running substage has a
-    // plan, because a partial plan compared against a full elapsed figure would
-    // read as being comfortably inside a budget that was never set.
-    const planFor = (id) => {
-      const list = (subsByProject[id] ?? []).filter((s) => s.started_on);
-      if (list.length === 0 || list.some((s) => s.planned_weeks == null)) return null;
-      return list.reduce((n, s) => n + plannedWorkingDays(s.planned_weeks), 0);
-    };
-
-    const spend = spendByProject(scoped.rows, subsByProject).map((d) => ({ ...d, plan: planFor(d.id) }));
-
-    return {
-      head: headline(scoped.rows, scoped.subs, events),
-      spend,
-      overdue: overdueByProject(scoped.rows),
-      sections: sectionLoad(scoped.subs, sections),
-      team: teamLoad(scoped.teams, scoped.rows),
-      months: throughput(events, 12),
-      mix: statusMix(scoped.rows, STATUS_ORDER),
-      totalSpend: daysSpent(scoped.subs),
-    };
-  }, [scoped, subs, events]);
+  }, [rows, subs, sections, teams, type, person]);
 
   if (error) {
     return <div className="state"><Alert size={26} /><strong>Could not load the numbers</strong>{error}</div>;
@@ -150,13 +161,14 @@ export default function Analytics({ onBack }) {
       <div className="wrap">
         <div style={{ paddingTop: 24 }}>
           <div className="skel" style={{ height: 26, width: 220, marginBottom: 18 }} />
-          {[...Array(4)].map((_, i) => <div key={i} className="skel" style={{ height: 132, marginBottom: 12 }} />)}
+          {[...Array(3)].map((_, i) => <div key={i} className="skel" style={{ height: 150, marginBottom: 12 }} />)}
         </div>
       </div>
     );
   }
 
-  const filtering = !!(type || person);
+  const mine = !!person;
+  const whose = mine ? person : 'the studio';
 
   return (
     <div className="wrap">
@@ -164,143 +176,140 @@ export default function Analytics({ onBack }) {
         <button className="btn ghost tight" onClick={onBack}><ArrowLeft size={15} />All projects</button>
         <h1>The numbers</h1>
         <p className="lede">
-          Every duration below is counted in working days: Sundays are excluded, and a
-          planned duration in weeks is read as six days to the week, not seven.
+          Every duration is counted in working days: Sundays are excluded, and a planned
+          duration in weeks is read as six days to the week. Nothing here is inferred — a
+          date nobody set is reported as missing, never guessed at.
         </p>
       </header>
 
+      {behind && (
+        <SchemaNotice what="Section deadlines are missing from the figures below until it is applied — the table that holds them does not exist yet." />
+      )}
+
       <div className="toolbar">
+        <select className="select" value={person ?? ''} onChange={(e) => setPerson(e.target.value)}
+                aria-label="Whose work to show">
+          <option value="">Everyone</option>
+          {people.map((p) => <option key={p} value={p}>{p}{p === me ? ' (you)' : ''}</option>)}
+        </select>
         <div className="seg" role="group" aria-label="Filter by discipline">
           {TYPES.map(([v, l]) => (
             <button key={v || 'all'} aria-pressed={type === v} onClick={() => setType(v)}>{l}</button>
           ))}
         </div>
-        <select className="select" value={person} onChange={(e) => setPerson(e.target.value)}
-                aria-label="Filter by person">
-          <option value="">Anyone</option>
-          {people.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-        {filtering && (
-          <button className="btn ghost" onClick={() => { setType(''); setPerson(''); }}>
-            Clear · showing {scoped.rows.length} of {rows.length}
-          </button>
-        )}
+        <span className="scope num">
+          {model.rows.length} {model.rows.length === 1 ? 'project' : 'projects'}
+        </span>
       </div>
 
       <div className="tiles">
-        <Tile n={model.head.live} label="Live projects" note={`${scoped.rows.length} in view`} />
-        <Tile n={model.head.late} label="Past plan or deadline" tone={model.head.late ? 'late' : null}
-              note={model.head.late ? 'sorted to the top of the board' : 'nothing overdue'} />
-        <Tile n={model.head.medianAge ?? '—'} label="Median days in a running stage"
-              note={`across ${model.head.running} running stages`} />
-        <Tile n={model.head.concluded30} label="Stages concluded, last 30 days"
-              note="from the activity log" tone={model.head.concluded30 ? 'good' : null} />
+        <Tile n={model.head.overdue} label="Deadlines already missed" tone={model.head.overdue ? 'late' : null}
+              note={mine ? `on ${person}'s projects` : 'across the studio'} />
+        <Tile n={model.head.soon} label="Due in the next four weeks"
+              note="working days, Sundays excluded" />
+        <Tile n={model.head.runningUndated} label="Running with no date on it"
+              tone={model.head.runningUndated ? 'late' : null}
+              note={`of ${model.head.totalUndated} undated stages in all`} />
+        <Tile n={model.head.live} label="Live projects" note={mine ? `${whose} owns work on these` : 'in view'} />
       </div>
 
-      <div className="figs">
+      <div className="figs one">
+        {/* ------------------------------------------------- 1. the snapshot */}
         <Figure
-          title="Furthest past plan or deadline"
-          claim="Working days a project has run past the planned duration of its most overdue stage, or past the date set for it. This is the board's sort order, as a picture."
-          columns={['Project', 'Days over']}
-          rows={model.overdue.map((d) => [d.label, d.value])}
-          empty="Nothing is past its plan or its deadline. That is the good outcome, not a missing chart."
+          title={mine ? `${person}'s deadlines` : 'Deadlines across the studio'}
+          claim="Every date anybody has committed to on these projects — a project's delivery, a section's deadline, a single stage's target — soonest first, with the ones already missed at the top. Working days, so a date two Sundays away is twelve days off, not fourteen."
+          columns={['When', 'What', 'Project', 'Working days']}
+          rows={model.items.map((i) => [
+            shortDate(i.date), i.what, i.project, i.days,
+          ])}
+          empty={
+            model.rows.length === 0
+              ? 'No projects in view.'
+              : 'Not one date has been set on these projects — not a delivery date, not a section deadline, not a stage target. That is not an empty diary; it is an unwritten one. The figure below counts what is waiting for a date.'
+          }
         >
-          <Bars data={model.overdue} unit="working days" color="var(--status-critical)"
-                highlight={() => true} />
+          <table className="dates">
+            <thead>
+              <tr>
+                <th scope="col">When</th>
+                <th scope="col">What</th>
+                <th scope="col">Project</th>
+              </tr>
+            </thead>
+            <tbody>
+              {model.items.slice(0, 14).map((i) => (
+                <tr key={i.key} className={i.days < 0 ? 'late' : undefined}>
+                  <td className="when">
+                    {shortDate(i.date)}
+                    <span className="rel">{dueWording(i.days)}</span>
+                  </td>
+                  <td>
+                    <span className="what">{i.what}</span>
+                    <span className="where">
+                      <span className={`kind k-${i.kind}`}>{KIND[i.kind]}</span>
+                      {i.section && ` · ${i.section}`}
+                      {i.status && ` · ${statusLabel(i.status)}`}
+                    </span>
+                  </td>
+                  <td>{i.project}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {model.items.length > 14 && (
+            <p className="figfoot">
+              <Calendar size={12} />
+              Showing the 14 nearest of {model.items.length}. “Numbers” lists them all.
+            </p>
+          )}
+        </Figure>
+
+        {/* --------------------------------------------- 2. the unscheduled */}
+        <Figure
+          title="Work with no date on it"
+          claim="Stages that are in scope and unfinished, where neither the stage nor its section carries a date. Split by whether the work has actually begun: a stage running with nothing to measure it against is a different problem from one nobody has started."
+          columns={['Section', 'Running, undated', 'Not started, undated', 'Total']}
+          rows={model.undated.filter((d) => d.value > 0)
+            .map((d) => [d.label, d.inProcess, d.notStarted, d.value])}
+          empty="Every unfinished stage in view carries a date, on itself or on its section."
+        >
+          <StackedBars
+            data={model.undated}
+            unit="stages"
+            parts={[
+              { key: 'inProcess', label: 'running, no date', color: 'var(--status-critical)' },
+              { key: 'notStarted', label: 'not started, no date', color: 'var(--series-1)' },
+            ]}
+          />
           <p className="figfoot">
-            <Alert size={12} />
-            Each bar is one project, labelled with its overrun. Red here means late, and the
-            number beside every bar says so in words as well.
+            <Dashed size={12} />
+            Most of the second bar is structure the studio has not reached yet, which is
+            normal. The first is the one to act on: work already under way that nothing is
+            holding to a date.
           </p>
         </Figure>
 
-        <Figure
-          title="Working days spent, by project"
-          claim="Every stage's elapsed time added up, Sundays excluded. Stages run in parallel here, so this is effort across the project, not how long the project has been open."
-          columns={['Project', 'Days spent', 'Planned']}
-          rows={model.spend.map((d) => [d.label, d.value, d.plan ?? '—'])}
-          empty="No stage has a start date yet, so nothing has measurable time against it."
-        >
-          <Bars data={model.spend} unit="working days"
-                mark={(d) => d.plan}
-                highlight={(d) => d.plan != null && d.value > d.plan} />
-          {/* Two colours means two things, so they are named. Without this a
-              reader would take blue for "fine" when it also means "no plan was
-              ever recorded", which is not the same claim at all. */}
-          <Key items={[
-            { label: 'past its planned duration', color: 'var(--status-critical)' },
-            { label: 'within plan, or no plan recorded', color: 'var(--series-1)' },
-          ]} />
-          <p className="figfoot">
-            <Clock size={12} />
-            The thin tick on a bar is the planned duration of the stages that have started.
-            It is shown only where every one of them has a plan; where it is missing, the
-            plan was never recorded rather than being met.
-          </p>
-        </Figure>
-
-        <Figure
-          title="Where the live work is sitting"
-          claim="Stages currently in process, by section. Counted on stages rather than projects, because a project can be running work in three sections at once."
-          columns={['Section', 'Stages in process']}
-          rows={model.sections.map((d) => [d.label, d.value])}
-          empty="Nothing is in process."
-        >
-          <Bars data={model.sections} unit="stages" color="var(--series-3)" labelWidth={200} />
-        </Figure>
-
+        {/* ------------------------------------------------- 3. the team */}
         <Figure
           title="Team load"
-          claim="Live projects where a person owns work. Advisory involvement is excluded: it owns no work, and counting it would put the principal at the top of a load chart he is not carrying."
+          claim="Live projects where a person owns work. Advisory involvement is excluded: it owns no work, and counting it would put the principal at the top of a load chart he is not carrying. These are the same counts the original spreadsheet carried."
           columns={['Person', 'Live projects']}
           rows={model.team.map((d) => [d.label, d.value])}
           empty="Nobody is assigned to a live project in this view."
         >
-          <Bars data={model.team} unit="live projects" color="var(--series-4)" />
-        </Figure>
-
-        <Figure
-          title="Stages concluded per month"
-          claim="From the append-only activity log, so it is a record of what was actually called finished. Empty months are kept: a gap in output is a fact, and skipping the month would draw a line straight over it."
-          columns={['Month', 'Stages concluded']}
-          rows={model.months.map((d) => [d.label, d.value])}
-          empty="No stage has been concluded in the app yet."
-        >
-          <Trend data={model.months} unit="stages concluded" />
+          <Bars data={model.team} unit="live projects" color="var(--series-4)" labelWidth={150} />
           <p className="figfoot">
-            <TrendIcon size={12} />
-            Only changes made in this app appear here. Work concluded before the studio
-            moved off the spreadsheet has no event behind it and is not counted.
+            <Users size={12} />
+            One project counts once per person, whatever their role code on it.
           </p>
-        </Figure>
-
-        <Figure
-          title="Projects by status"
-          claim="The whole portfolio in one bar, in the order the statuses are worth reading."
-          columns={['Status', 'Projects']}
-          rows={model.mix.map((d) => [projectStatusLabel(d.label), d.value])}
-          empty="No projects in view."
-        >
-          {model.mix.length < 2 ? (
-            <p className="oneline">
-              All {scoped.rows.length} projects in view are
-              {' '}<strong>{projectStatusLabel(model.mix[0]?.label)}</strong>. A bar with one
-              segment in it is a sentence, so this is the sentence.
-            </p>
-          ) : (
-            <Composition
-              data={model.mix.map((d) => ({ ...d, label: projectStatusLabel(d.label) }))}
-              colors={SERIES}
-              total={scoped.rows.length}
-            />
-          )}
         </Figure>
       </div>
 
       <p className="foot">
         <Check size={13} />
-        {model.totalSpend} working days recorded across {scoped.rows.length} projects
-        {filtering ? ' in this view' : ''}. Click a project on the board to see where they went.
+        {model.head.dated} dated {model.head.dated === 1 ? 'commitment' : 'commitments'} and
+        {' '}{model.head.totalUndated} undated {model.head.totalUndated === 1 ? 'stage' : 'stages'}
+        {' '}across {model.rows.length} {model.rows.length === 1 ? 'project' : 'projects'}.
       </p>
     </div>
   );

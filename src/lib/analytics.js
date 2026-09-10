@@ -18,7 +18,6 @@
  */
 
 import { workingDays, todayISO } from './workdays.js';
-import { lateness } from './board.js';
 
 const byCountDesc = (a, b) => b.value - a.value || a.label.localeCompare(b.label);
 
@@ -39,55 +38,6 @@ export function daysSpent(subs, today = todayISO()) {
     if (d != null && d > 0) total += d;
   }
   return total;
-}
-
-/** Top projects by working days spent. The user's headline question. */
-export function spendByProject(rows, subsByProject, limit = 12) {
-  const today = todayISO();
-  return rows
-    .map((r) => ({
-      id: r.id,
-      label: r.name,
-      value: daysSpent(subsByProject[r.id] ?? [], today),
-      meta: r.type,
-    }))
-    .filter((d) => d.value > 0)
-    .sort(byCountDesc)
-    .slice(0, limit);
-}
-
-/** Projects furthest past a plan, a target or a section deadline. */
-export function overdueByProject(rows, limit = 12) {
-  return rows
-    .map((r) => {
-      const late = lateness(r);
-      return {
-        id: r.id,
-        label: r.name,
-        value: late.days ?? 0,
-        meta: late.basis,
-        substage: r.substage_name,
-      };
-    })
-    .filter((d) => d.value > 0)
-    .sort(byCountDesc)
-    .slice(0, limit);
-}
-
-/**
- * Where live work is sitting: in-process substages per section.
- *
- * Counted on substages, not projects, because a project can be running work in
- * three sections at once and picking one of them would be a choice the data
- * does not support.
- */
-export function sectionLoad(subs, sectionOrder) {
-  const n = new Map(sectionOrder.map((s) => [s, 0]));
-  for (const s of subs) {
-    if (s.status !== 'in_process') continue;
-    n.set(s.section, (n.get(s.section) ?? 0) + 1);
-  }
-  return sectionOrder.map((label) => ({ label, value: n.get(label) ?? 0 }));
 }
 
 /**
@@ -112,40 +62,6 @@ export function teamLoad(teamsByProject, rows) {
 
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/**
- * Substages concluded per month, for the last `months` months including this
- * one. Derived from the events log, which is append-only and is the only honest
- * record of when work was actually called finished.
- *
- * Empty months are kept. A gap in the studio's output is a fact about the
- * studio, and dropping the month would draw a line straight over it.
- */
-export function throughput(events, months = 12, now = new Date()) {
-  const buckets = [];
-  const index = new Map();
-  for (let i = months - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
-    const label = `${MONTH[d.getMonth()]}${d.getMonth() === 0 || i === months - 1 ? ` ${String(d.getFullYear()).slice(2)}` : ''}`;
-    index.set(key, buckets.length);
-    buckets.push({ label, value: 0, key });
-  }
-  for (const e of events) {
-    if (e.to_status !== 'done') continue;
-    const d = new Date(e.at);
-    const at = index.get(`${d.getFullYear()}-${d.getMonth()}`);
-    if (at != null) buckets[at].value += 1;
-  }
-  return buckets;
-}
-
-/** Project counts by status, in the order the statuses are worth reading. */
-export function statusMix(rows, order) {
-  const n = new Map(order.map((s) => [s, 0]));
-  for (const r of rows) n.set(r.status, (n.get(r.status) ?? 0) + 1);
-  return order.map((label) => ({ label, value: n.get(label) ?? 0 })).filter((d) => d.value > 0);
-}
-
 /** The median of a list of numbers, or null for an empty one. */
 export function median(values) {
   if (values.length === 0) return null;
@@ -154,23 +70,118 @@ export function median(values) {
   return v.length % 2 ? v[mid] : Math.round((v[mid - 1] + v[mid]) / 2);
 }
 
-/** The four numbers at the top of the analytics screen. */
-export function headline(rows, subs, events, now = new Date()) {
-  const running = subs.filter((s) => s.status === 'in_process' && s.started_on);
-  const today = todayISO();
-  const ages = running
-    .map((s) => workingDays(s.started_on, today))
-    .filter((d) => d != null && d >= 0);
-
-  const cutoff = new Date(now);
-  cutoff.setDate(cutoff.getDate() - 30);
-  const concluded30 = events.filter((e) => e.to_status === 'done' && new Date(e.at) >= cutoff).length;
-
+/**
+ * The four numbers above the figures. Each one is the headline of a figure
+ * below it, so a reader never has to work out which chart a number came from.
+ */
+export function headline({ items, undated, rows }) {
+  const late = overdue(items);
+  const soon = dueWithin(items, 24);          // four working weeks
+  const running = undated.reduce((n, s) => n + s.inProcess, 0);
+  const total = undated.reduce((n, s) => n + s.value, 0);
   return {
+    overdue: late.length,
+    soon: soon.length,
+    runningUndated: running,
+    totalUndated: total,
     live: rows.filter((r) => r.status === 'ongoing').length,
-    late: rows.filter((r) => lateness(r).late).length,
-    medianAge: median(ages),
-    concluded30,
-    running: running.length,
+    dated: items.length,
   };
+}
+
+/* ------------------------------------------------------- dated and undated -- */
+
+/**
+ * Every date anybody has committed to, as one list.
+ *
+ * Three kinds, because the studio commits at three levels and a person wants
+ * them in one place rather than in three:
+ *
+ *   delivery  projects.target_delivery        - the whole job
+ *   section   project_stage_group.target_date - a phase
+ *   stage     project_substage.target_date    - one piece of work
+ *
+ * Counted in working days like everything else, so "in 12 days" here and "12
+ * days" on the board mean the same twelve days.
+ *
+ * Nothing is inferred. A stage with no date does not borrow its section's, and
+ * a section with no date does not borrow the project's delivery date; a date
+ * nobody set is an absence, and undatedWork() below is where that absence is
+ * reported. Inventing one here would make the gap invisible in both figures.
+ */
+export function deadlineItems({ projects = [], sections = [], stages = [] }, today = todayISO()) {
+  const out = [];
+
+  for (const p of projects) {
+    if (!p.target_delivery) continue;
+    out.push({
+      key: `d:${p.id}`, kind: 'delivery', date: p.target_delivery,
+      project: p.name, projectId: p.id, what: 'Project delivery',
+      days: workingDays(today, p.target_delivery),
+    });
+  }
+  for (const s of sections) {
+    if (!s.target_date) continue;
+    out.push({
+      key: `g:${s.id}`, kind: 'section', date: s.target_date,
+      project: s.project, projectId: s.project_id, what: s.section,
+      days: workingDays(today, s.target_date),
+    });
+  }
+  for (const s of stages) {
+    if (!s.target_date) continue;
+    // A finished stage's date is history, not a deadline.
+    if (s.status === 'done' || s.status === 'cancelled' || s.status === 'not_in_scope') continue;
+    out.push({
+      key: `s:${s.id}`, kind: 'stage', date: s.target_date,
+      project: s.project, projectId: s.project_id,
+      what: s.substage, section: s.section, status: s.status,
+      days: workingDays(today, s.target_date),
+    });
+  }
+
+  // Soonest first, and the ones already past at the very top: a date you have
+  // missed is more urgent than one you are about to.
+  return out.sort((a, b) => a.days - b.days || a.project.localeCompare(b.project));
+}
+
+export const overdue = (items) => items.filter((i) => i.days < 0);
+export const dueWithin = (items, days) => items.filter((i) => i.days >= 0 && i.days <= days);
+
+/**
+ * Work that is in scope, not finished, and carries no date of any kind.
+ *
+ * WHY THE SPLIT MATTERS. Migration 0011 gave every project its full section
+ * structure, so most of these rows are stages nobody has begun - real, but not
+ * urgent. A single total would be a number in the hundreds that says "you have
+ * planned nothing", which is both alarming and useless.
+ *
+ * Split by status, the same list answers the question worth asking: how much
+ * work is RUNNING RIGHT NOW with nothing to measure it against. That is the
+ * short, actionable half, and it sits beside the long half rather than hiding
+ * it.
+ *
+ * A stage counts as undated only if neither it nor its section carries a date.
+ * A section deadline is a commitment that covers the stages inside it, so a
+ * stage under a dated section is scheduled even without one of its own.
+ */
+export function undatedWork(stages, sectionOrder) {
+  const empty = () => ({ inProcess: 0, notStarted: 0, items: [] });
+  const bySection = new Map(sectionOrder.map((s) => [s, empty()]));
+
+  for (const s of stages) {
+    if (s.status !== 'in_process' && s.status !== 'not_started' && s.status !== 'hold') continue;
+    if (s.target_date || s.section_target) continue;
+    if (!bySection.has(s.section)) bySection.set(s.section, empty());
+    const bucket = bySection.get(s.section);
+    if (s.status === 'not_started') bucket.notStarted += 1;
+    else bucket.inProcess += 1;                        // in_process and hold: work that has begun
+    bucket.items.push(s);
+  }
+
+  return sectionOrder.map((label) => {
+    const b = bySection.get(label) ?? empty();
+    return { label, inProcess: b.inProcess, notStarted: b.notStarted,
+             value: b.inProcess + b.notStarted, items: b.items };
+  });
 }

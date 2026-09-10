@@ -154,3 +154,80 @@ update project_stage_group set target_date = null
 where project_id = (select project_id from t3);
 select count(*) = 1 as row_kept, bool_and(target_date is null) as date_cleared
 from project_stage_group where project_id = (select project_id from t3);
+
+-- ===========================================================================
+-- RECONCILIATION WITH THE ORIGINAL SPREADSHEET
+--
+-- The three figures the analytics screen reports, computed here in SQL against
+-- the loaded seed. test/js/spreadsheet.test.mjs asserts the same numbers from
+-- seed.json using the app's own functions, so each figure is pinned at both
+-- ends: if the decode moves, the JS suite fails; if a migration or a query
+-- moves, this one does. Neither can drift quietly.
+--
+-- READ THE COUNTS BELOW AS SHAPES, NOT AS SEED-DAY FIGURES. The trigger tests
+-- above have already moved a handful of rows on purpose, so the undated counts
+-- here are three or four off what a freshly seeded database shows. The figures
+-- that must be exact - team load, and how many dates the sheet carried - are
+-- unaffected by those mutations, and those are the ones asserted rather than
+-- printed.
+-- ===========================================================================
+
+\echo '--- TEAM LOAD: must match seed.json exactly, Gururaj Sir included ---'
+-- Advisory involvement excluded. 15 of the principal's 16 rows are the sheet's
+-- oversight marker; counting them would make him the busiest person here.
+select pe.name, count(*) as live_projects
+from assignments a
+join people pe on pe.id = a.person_id
+join projects p on p.id = a.project_id
+where a.role_code <> 'INVOLVED' and pe.active and p.status = 'ongoing'
+group by pe.name
+order by live_projects desc, pe.name;
+
+\echo '--- TEAM LOAD: the whole table as one verdict (this one is asserted) ---'
+select case when array_agg(name || '=' || n order by n desc, name) =
+            array['Madhu=14','Selva=7','Pavan=6','Vibhaas=5','Varun=4',
+                  'Venugopal=4','Niharika=3','Gururaj Sir=1']
+            then 'PASS' else 'FAIL' end as team_load_matches_the_spreadsheet
+from (
+  select pe.name, count(*) as n
+  from assignments a
+  join people pe on pe.id = a.person_id
+  join projects p on p.id = a.project_id
+  where a.role_code <> 'INVOLVED' and pe.active and p.status = 'ongoing'
+  group by pe.name
+) t;
+
+\echo '--- DEADLINES: the sheet carried five forward-looking dates, and no more ---'
+-- Asserted, not merely printed: five is the whole of what 151 rows of a live
+-- practice had committed to.
+-- Seven dates in 151 rows. Two sat on finished work and became concluded_on;
+-- the other five were expectations and became target_date (0004, decision B4).
+-- This is the whole reason dates are stamped rather than typed.
+select
+  (select count(*) from project_substage where target_date is not null)  as stage_targets,
+  (select count(*) from project_stage_group where target_date is not null) as section_deadlines,
+  (select count(*) from projects where target_delivery is not null)       as delivery_dates;
+-- started_on is deliberately not counted here: the trigger tests above stamp a
+-- few. That the sheet recorded none is asserted in test/js/spreadsheet.test.mjs,
+-- against seed.json, where nothing has moved.
+
+\echo '--- UNSCHEDULED: in scope, unfinished, and carrying no date anywhere ---'
+-- Split the way the screen splits it. The first number is the one to act on:
+-- work already running with nothing holding it to a date.
+select
+  count(*) filter (where ps.status in ('in_process','hold'))  as running_undated,
+  count(*) filter (where ps.status = 'not_started')           as not_started_undated,
+  count(*)                                                    as total_undated
+from project_substage ps
+left join substages s   on s.id = ps.substage_id
+left join project_stage_group psg
+       on psg.project_id = ps.project_id and psg.stage_group_id = s.stage_group_id
+where ps.status in ('not_started','in_process','hold')
+  and ps.target_date is null
+  and psg.target_date is null;
+
+\echo '--- UNSCHEDULED: a date on the stage or on its section takes it off the list ---'
+select
+  (select count(*) from project_substage
+    where status in ('not_started','in_process','hold') and target_date is not null)
+    as excluded_by_their_own_date;

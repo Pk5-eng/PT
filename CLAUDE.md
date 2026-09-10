@@ -101,9 +101,17 @@ between other tasks, not people who will learn a tool.
 - **No percent complete.** It is always back-derived from the fee stage and always fiction.
 - **Show the gaps.** Twenty of 37 projects have no stage data. They appear on the board as
   "Not set". Never hide an empty row.
-- **Four screens.** Board, Project detail, Analytics ("The numbers", which carries team
-  load), and the new-project / edit panel that slides over any of them. Admin settings are
-  still unbuilt; the taxonomy is edited in Supabase for now.
+- **Four screens.** Board, Project detail, Analytics ("The numbers"), and the new-project /
+  edit panel that slides over any of them. Admin settings are still unbuilt; the taxonomy is
+  edited in Supabase for now.
+- **The numbers screen answers exactly three questions**, and the studio chose them: what is
+  coming at me and what have I already missed; what work is nobody scheduling; who is carrying
+  how much. Its person filter defaults to whoever is signed in, which is what makes the first
+  one personal. Do not add a fourth figure without being asked — the screen was six figures
+  once and was cut back on purpose.
+- **Nothing on that screen is inferred.** A stage with no date does not borrow its section's,
+  and a section does not borrow the project's delivery date. The second figure exists to count
+  those absences, and it would be measuring its own guesses if the first had filled them in.
 - **The board shows the substage that is stuck, not the first one.** 10 of 17 active projects run
   several substages at once, so a row reports the most overdue and counts the rest as "+N more".
 

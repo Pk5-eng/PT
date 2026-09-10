@@ -353,3 +353,65 @@ export function Tile({ n, label, note, tone }) {
     </div>
   );
 }
+
+/* --------------------------------------------------------- stacked bars --- */
+
+/**
+ * One bar per category, split into two parts of the same measure.
+ *
+ * Still one axis and one unit - these are both counts of stages - so the two
+ * segments can be compared against each other and against every other bar. The
+ * split exists because the total alone would be a large number that hides the
+ * small urgent number inside it.
+ *
+ * Segments are separated by a 2px gap of surface rather than a stroke, and the
+ * legend names both parts: colour is the fast channel here, never the only one.
+ */
+export function StackedBars({ data, parts, unit = '', labelWidth = 200 }) {
+  const t = useTooltip();
+  const max = Math.max(1, ...data.map((d) => d.value));
+
+  return (
+    <div className="barwrap" ref={t.box}>
+      <ul className="bars stacked" style={{ '--label-w': `${labelWidth}px`, '--value-w': `${VALUE_W}px` }}>
+        {data.map((d) => (
+          <li
+            key={d.label}
+            style={{ height: ROW_H }}
+            onMouseMove={(e) => t.show(e, (
+              <>
+                <strong>{d.label}</strong>
+                {parts.map((p) => <span key={p.key}>{d[p.key]} {p.label}</span>)}
+              </>
+            ))}
+            onMouseLeave={t.hide}
+          >
+            <span className="lab" title={d.label}>{d.label}</span>
+            <span className="track">
+              {parts.map((p) => (
+                d[p.key] > 0 && (
+                  <span
+                    key={p.key}
+                    className="seg"
+                    style={{ width: `${(d[p.key] / max) * 100}%`, height: BAR_H, background: p.color }}
+                  />
+                )
+              ))}
+            </span>
+            <span className="val num">{d.value}</span>
+          </li>
+        ))}
+      </ul>
+      <ul className="legend">
+        {parts.map((p) => (
+          <li key={p.key}>
+            <span className="sw" style={{ background: p.color }} />
+            {p.label}
+            <span className="num">{data.reduce((n, d) => n + d[p.key], 0)}</span>
+          </li>
+        ))}
+      </ul>
+      {t.node}
+    </div>
+  );
+}

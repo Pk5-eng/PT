@@ -200,6 +200,12 @@ to Supabase.
   exceptions, and all three are plans rather than records.
 - `ensure_project_structure()` is the single definition of which sections a project gets.
   The new-project form, the seed and the backfill all call it, so they cannot disagree.
+- **The analytics figures reconcile with the original spreadsheet, and that is tested at both
+  ends.** `test/js/spreadsheet.test.mjs` computes them from `seed.json` with the app's own
+  functions; `test/01_behaviour.sql` computes the same figures in SQL against the loaded
+  database. Team load is asserted person by person — Madhu 14, Selva 7, down to Gururaj Sir 1,
+  who is advisory on 15 of his 16 projects. If the decode moves, the JS suite fails; if a
+  migration or a query moves, the SQL one does.
 - **Writes are optimistic, and reverting is the price of that.** A status change, a tick, a
   deadline or a target date appears at once and is put back if the database refuses, with the
   reason on screen (`optimistic()` in `src/lib/live.js`). Changing one substage status used to
