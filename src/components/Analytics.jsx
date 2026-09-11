@@ -7,6 +7,7 @@ import SchemaNotice from './SchemaNotice.jsx';
 import {
   deadlineItems, overdue, dueWithin, dateCoverage, teamLoad, headline,
 } from '../lib/analytics.js';
+import { isCompleted } from '../lib/board.js';
 import { Alert, ArrowLeft, Calendar, Users, Dashed, Check } from './Icons.jsx';
 
 /**
@@ -136,7 +137,15 @@ export default function Analytics({ onBack }) {
   const model = useMemo(() => {
     if (!rows || person === null) return null;
 
+    // A completed project leaves this screen entirely, before any figure is
+    // computed. All three questions here are about work that is still coming -
+    // what is due, what nobody has scheduled, who is carrying it - and a job
+    // that shipped answers none of them. Its missed deadlines are not misses
+    // anybody can still act on, and its unscheduled stages are not a backlog.
+    // Dropping it here rather than inside each figure is what keeps the three
+    // consistent with each other and with the board.
     const keep = rows.filter((r) =>
+      !isCompleted(r) &&
       (!type || r.type === type) &&
       (!person || (teams[r.id] ?? []).some((t) => t.name === person)));
     const ids = new Set(keep.map((r) => r.id));

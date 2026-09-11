@@ -240,6 +240,13 @@ to Supabase.
   whole-row update would name `role` and be refused. Removing someone is `active = false` and
   leaves their assignments alone; the panel says how many live projects still list them.
   See `supabase/migrations/0013_roster.sql`, asserted in `test/02_rls.sql`.
+- **A completed project is sunk, never hidden.** The button at the foot of the project screen
+  sets `projects.status = 'completed'` — one field, optimistically, reversible from the same
+  place. The row goes green and sorts below every live project in all four orders, and it is
+  excluded from all four board cards and from every figure on the numbers screen. No substage
+  is touched: closing them for the user would stamp `concluded_on` through the trigger on work
+  nobody actually concluded. `isCompleted()` in `src/lib/board.js` is the single definition,
+  pinned in `test/js/board.test.mjs`, including that each card's number and its filter agree.
 - "Blocked by" was removed from the product. The `blocks` table and its rows still exist
   and nothing reads them; dropping it is a deliberate one-line follow-up, not a leftover.
 - Dependencies are fixed by spec: React, Vite, `@supabase/supabase-js`, `date-fns`.

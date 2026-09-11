@@ -105,6 +105,16 @@ between other tasks, not people who will learn a tool.
 - **No percent complete.** It is always back-derived from the fee stage and always fiction.
 - **Show the gaps.** Twenty of 37 projects have no stage data. They appear on the board as
   "Not set". Never hide an empty row.
+- **A completed project sinks, it does not vanish.** The "Project completed" button at the
+  foot of the project screen writes `projects.status = 'completed'` and nothing else. The row
+  turns green, sorts below every live project in all four board orders, and leaves all four
+  board cards and the whole numbers screen — a job that shipped is not work coming at anybody.
+  It stays on the board, and "Reopen as ongoing" sits in the same place. Completing a project
+  never touches a substage: walking the list closing stages would stamp `concluded_on` through
+  the trigger on work whose real conclusion nobody recorded. `isCompleted()` in
+  `src/lib/board.js` is the only definition of the word, and `cancelled` and `npp` are
+  deliberately not part of it — nobody asked, and changing what the cards count is not a
+  decision to make in passing.
 - **Four screens.** Board, Project detail, Analytics ("The numbers"), and the new-project /
   edit panel that slides over any of them. The team panel on the board is the fifth thing that
   slides over, not a fifth screen: it adds a person to the roster and archives one, and that is

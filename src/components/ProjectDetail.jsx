@@ -5,6 +5,7 @@ import {
   projectStatusLabel, dueWording,
 } from '../lib/format.js';
 import { workingDays, todayISO } from '../lib/workdays.js';
+import { isCompleted } from '../lib/board.js';
 import { daysSpent } from '../lib/analytics.js';
 import ProjectPanel from './ProjectPanel.jsx';
 import SchemaNotice from './SchemaNotice.jsx';
@@ -12,7 +13,7 @@ import { isSchemaBehind } from '../lib/schema.js';
 import { optimistic, useRefreshOnReturn } from '../lib/live.js';
 import {
   ArrowLeft, ChevronRight, Check, Alert, Activity, Layers, Users,
-  Calendar, Pencil, Clock, LogOut,
+  Calendar, Pencil, Clock, LogOut, Undo,
 } from './Icons.jsx';
 
 /**
@@ -351,6 +352,53 @@ export default function ProjectDetail({ projectId, onBack }) {
     });
   }
 
+  /**
+   * Closing a project, and opening it again.
+   *
+   * ONE FIELD, AND ONLY THE ONE. `status` and nothing else, so a colleague who
+   * is editing the client name in the panel at this moment does not lose it
+   * (CLAUDE.md rule 9). The edit panel's status dropdown still exists and still
+   * reaches all six values; this is the one the studio does ninety per cent of
+   * the time, given its own button where the work actually ends.
+   *
+   * NOTHING ELSE IS TOUCHED. Not a substage status, not a deliverable tick, not
+   * a date. Walking the stage list and marking everything done would write a
+   * dozen events nobody performed and stamp concluded_on through the trigger on
+   * work whose real conclusion nobody recorded - inventing history to make a
+   * screen look tidy. A finished project keeps its stages exactly as the studio
+   * left them, and the board says "Completed" rather than reading them.
+   *
+   * NO CONFIRM STEP. This is fully reversible, the reverse is one click in the
+   * same place, and the result is stated on screen the instant it happens - so
+   * a dialog would buy nothing and cost every person a click, on a tool whose
+   * whole premise is that an interaction survives being done in thirty seconds.
+   *
+   * Reopening writes 'ongoing' rather than restoring whatever the status was
+   * before, because nothing here knows that: a project completed from 'hold'
+   * was on hold in April and is not necessarily on hold now. The button says
+   * which value it writes, and the edit panel is one click away for the rest.
+   */
+  async function setProjectStatus(next) {
+    const before = project.status;
+    setError(null);
+    mark('project', true);
+
+    await optimistic({
+      apply: () => setProject((p) => ({ ...p, status: next })),
+      revert: () => setProject((p) => ({ ...p, status: before })),
+      send: () => supabase
+        .from('projects').update({ status: next }).eq('id', projectId)
+        .select('id, status').single(),
+      settle: (data) => {
+        setProject((p) => ({ ...p, status: data.status }));
+        say(data.status === 'completed' ? 'Project completed' : 'Project reopened');
+      },
+      onError: (e) => setError(`Could not change the project status: ${e.message}`),
+    });
+
+    mark('project', false);
+  }
+
   // Flat list grouped by stage group, exactly as the spec asks.
   const groups = useMemo(() => {
     const out = [];
@@ -383,6 +431,7 @@ export default function ProjectDetail({ projectId, onBack }) {
   const working = team.filter((t) => t.role !== 'INVOLVED');
   const advisory = team.filter((t) => t.role === 'INVOLVED');
   const deliveryIn = project.target_delivery ? workingDays(todayISO(), project.target_delivery) : null;
+  const finished = isCompleted(project);
 
   return (
     <>
@@ -409,7 +458,9 @@ export default function ProjectDetail({ projectId, onBack }) {
             <span className={`tag tag-${project.type}`}>{project.type}</span>
             {project.code && <span>{project.code}</span>}
             {project.client_name && <span>{project.client_name}</span>}
-            <span>{projectStatusLabel(project.status)}</span>
+            {finished
+              ? <span className="finished"><Check size={12} />Completed</span>
+              : <span>{projectStatusLabel(project.status)}</span>}
             {project.priority != null && <span>priority {project.priority}</span>}
             {project.site_location && <span>{project.site_location}</span>}
           </div>
@@ -567,6 +618,38 @@ export default function ProjectDetail({ projectId, onBack }) {
                 </li>
               ))}
             </ul>
+          )}
+        </section>
+
+        {/* --------------------------------------------------- closing it out */}
+        {/* Last thing on the page, because it is the last thing that happens to
+            a project, and because a green button that removes a row from every
+            live figure has no business sitting beside the controls people use
+            forty times a day. Both states say what the click does to the rest
+            of the app before it is clicked, not after. */}
+        <section className={`closeout${finished ? ' on' : ''}`}>
+          <div className="co-text">
+            <strong>{finished ? 'This project is completed.' : 'Finished with this project?'}</strong>
+            <p>
+              {finished
+                ? 'It sits at the bottom of the board in green, and is left out of the live '
+                  + 'count, the overdue and delivery figures, and every figure on the numbers '
+                  + 'screen. Its stages, dates and activity are untouched.'
+                : 'Marking it completed moves it to the bottom of the board in green and takes '
+                  + 'it out of the live count and the numbers screen. No stage is changed and '
+                  + 'nothing is deleted — the button here puts it straight back.'}
+            </p>
+          </div>
+          {finished ? (
+            <button type="button" className="btn" disabled={!!pending.project}
+                    onClick={() => setProjectStatus('ongoing')}>
+              <Undo size={15} />Reopen as ongoing
+            </button>
+          ) : (
+            <button type="button" className="btn finish" disabled={!!pending.project}
+                    onClick={() => setProjectStatus('completed')}>
+              <Check size={15} />Project completed
+            </button>
           )}
         </section>
       </div>

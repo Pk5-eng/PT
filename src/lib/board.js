@@ -9,6 +9,23 @@
 import { workingDays, todayISO } from './workdays.js';
 
 /**
+ * A project the studio has finished.
+ *
+ * One predicate rather than a `status === 'completed'` test scattered through
+ * four files, because every consequence of being completed hangs off it: the
+ * row sinks to the bottom of the board, it stops being late, it stops being
+ * "delivering soon", and it leaves the numbers screen entirely. A project that
+ * was closed six months ago is not work coming at anybody, and counting it
+ * would make every figure on this dashboard describe a studio that no longer
+ * exists.
+ *
+ * Only 'completed'. 'cancelled' and 'npp' are also not live work, and arguably
+ * belong here too - but nobody has asked for that, and quietly changing what
+ * the four cards count is not a decision this predicate should make on its own.
+ */
+export const isCompleted = (row) => row.status === 'completed';
+
+/**
  * Why a project is late, and by how much.
  *
  * Three signals, in the order they deserve to be believed:
@@ -23,6 +40,12 @@ import { workingDays, todayISO } from './workdays.js';
  * app, started_on accumulates and days_over takes over on its own.
  */
 export function lateness(row) {
+  // A finished project cannot be overdue. Its substages are left exactly as
+  // they were - some of them still say "in process", because nobody walked the
+  // list closing them - and reporting that stale overrun on a job that shipped
+  // would be the board's loudest number describing its least relevant row.
+  if (isCompleted(row)) return { days: null, basis: null, late: false };
+
   if (row.days_over != null && row.days_over > 0) {
     return { days: row.days_over, basis: 'past plan', late: true };
   }
@@ -60,6 +83,7 @@ export function deliveryIn(row) {
 /** Delivery is "soon" inside four working weeks, and stays soon once overdue. */
 const SOON = 24;
 export const deliverySoon = (row) => {
+  if (isCompleted(row)) return false;   // nothing is still to be delivered
   const d = deliveryIn(row);
   return d != null && d <= SOON;
 };
@@ -75,10 +99,24 @@ export const deliverySoon = (row) => {
 export function sortRows(rows, key = 'overrun') {
   const byName = (a, b) => a.name.localeCompare(b.name);
 
-  if (key === 'name') return [...rows].sort(byName);
+  /**
+   * Finished work sits below live work, in every one of the four orders.
+   *
+   * Applied here rather than inside each comparator because it has to hold
+   * whichever one is chosen: sorted by name, a completed project called
+   * "Ashok Ranka" would otherwise open the board, and the first thing anybody
+   * read every morning would be a job that shipped last year. Sunk, never
+   * dropped - the row is still there, still readable, still one click from its
+   * screen. Hiding it would be the spreadsheet's mistake in a new coat.
+   */
+  const finishedLast = (a, b) => (isCompleted(a) ? 1 : 0) - (isCompleted(b) ? 1 : 0);
+
+  if (key === 'name') return [...rows].sort((a, b) => finishedLast(a, b) || byName(a, b));
 
   if (key === 'delivery') {
     return [...rows].sort((a, b) => {
+      const sunk = finishedLast(a, b);
+      if (sunk) return sunk;
       const da = deliveryIn(a), db = deliveryIn(b);
       if ((da == null) !== (db == null)) return da == null ? 1 : -1;  // undated sink
       if (da != null && da !== db) return da - db;
@@ -88,6 +126,8 @@ export function sortRows(rows, key = 'overrun') {
 
   if (key === 'stage') {
     return [...rows].sort((a, b) => {
+      const sunk = finishedLast(a, b);
+      if (sunk) return sunk;
       const an = a.substage_name ?? '', bn = b.substage_name ?? '';
       if (!an !== !bn) return an ? -1 : 1;       // untracked rows sink, never vanish
       const g = (a.stage_group_name ?? '').localeCompare(b.stage_group_name ?? '');
@@ -96,6 +136,8 @@ export function sortRows(rows, key = 'overrun') {
   }
 
   return [...rows].sort((a, b) => {
+    const sunk = finishedLast(a, b);
+    if (sunk) return sunk;
     const la = lateness(a), lb = lateness(b);
     if (la.late !== lb.late) return la.late ? -1 : 1;
     if (la.late && lb.late) {
@@ -109,6 +151,15 @@ export function sortRows(rows, key = 'overrun') {
   });
 }
 
+/**
+ * The four numbers at the top of the board.
+ *
+ * None of them counts a completed project. `live` never did, by definition;
+ * lateness() and deliverySoon() now refuse one on their own, so only the idle
+ * count needs saying out loud. A finished project whose stages were never
+ * ticked off would otherwise sit on the "Nothing started yet" card forever,
+ * which is a true statement about the data and a false one about the studio.
+ */
 export function summarise(rows) {
   return {
     live: rows.filter((r) => r.status === 'ongoing').length,
@@ -117,16 +168,25 @@ export function summarise(rows) {
     // Since 0011 gave every project a structure, the gap this counts is work
     // nobody has begun rather than a project nobody has described. Still shown,
     // still never hidden - see CLAUDE.md, "show the gaps".
-    idle: rows.filter((r) => !r.started_count).length,
+    idle: rows.filter(isIdle).length,
   };
 }
 
-/** The four card filters. Exactly one can be on at a time. */
+const isIdle = (r) => !isCompleted(r) && !r.started_count;
+
+/**
+ * The four card filters. Exactly one can be on at a time.
+ *
+ * Each one is the same predicate the card counted, so clicking a number shows
+ * exactly the rows behind it. That identity is why they are shared rather than
+ * written twice: a card reading 6 and a filter showing 7 would be a bug nobody
+ * would report and everybody would stop trusting.
+ */
 export const FOCUS = {
   live: (r) => r.status === 'ongoing',
   late: (r) => lateness(r).late,
   soon: deliverySoon,
-  idle: (r) => !r.started_count,
+  idle: isIdle,
 };
 
 /**

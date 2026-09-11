@@ -178,6 +178,16 @@ button { font: inherit; color: inherit; }
 }
 .btn.primary:hover { box-shadow: 0 4px 16px rgba(74, 58, 167, .36); transform: translateY(-1px); }
 .btn.primary:active { transform: translateY(0); }
+/* The one green button in the app. Green because completion is the one thing
+   here that is unambiguously good news, and the only place the ok colour gets
+   to be a fill rather than a tint. It still carries its word and its tick, so
+   in greyscale it is a labelled button and nothing is lost. */
+.btn.finish {
+  border-color: var(--ok); background: var(--ok); color: #fff; font-weight: 550;
+  box-shadow: 0 2px 10px rgba(10, 125, 61, .26);
+}
+.btn.finish:hover { background: #086933; border-color: #086933; color: #fff; box-shadow: 0 4px 16px rgba(10, 125, 61, .32); transform: translateY(-1px); }
+.btn.finish:active { transform: translateY(0); }
 .btn.primary .kbd { border-color: rgba(255,255,255,.35); color: rgba(255,255,255,.85); background: rgba(255,255,255,.12); }
 .btn:disabled { opacity: .5; cursor: default; transform: none; }
 .btn svg { flex: 0 0 auto; }
@@ -331,6 +341,13 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
 .tablecard tbody tr.clickable:hover { background: var(--surface-2); }
 .tablecard tbody tr.late { background: var(--late-bg); --edge: var(--late); }
 .tablecard tbody tr.late.clickable:hover { background: #fbe7e4; }
+/* A completed project. It is sorted to the bottom of the board in JS, and the
+   green is the echo of a word that is already in the row twice - "Completed" in
+   the overdue column, and again in the meta line under the name. Remove the
+   colour and the row still says what it is. */
+.tablecard tbody tr.finished { background: var(--ok-bg); --edge: var(--ok); }
+.tablecard tbody tr.finished.clickable:hover { background: #dff1e7; }
+.tablecard tbody tr.finished .pname { color: var(--ink-2); }
 .tablecard tbody tr:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 
 .pname { font-weight: 600; letter-spacing: -0.01em; }
@@ -437,6 +454,25 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
   border-radius: var(--r-sm); padding: 8px 10px; font-size: 13px; margin: 0 0 14px;
 }
 .signin .err svg { flex: 0 0 auto; margin-top: 1px; }
+
+/* ------------------------------------------------------------- close out -- */
+/* The last block on the project screen. Deliberately quiet until it is read:
+   no card shadow competing with the stage rows above it, one sentence saying
+   what the click does to the rest of the app, and the button on the right where
+   a commit action belongs. It goes green once the project is finished, which is
+   the same green the board row takes. */
+.closeout {
+  max-width: 1000px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  margin: 6px 0 30px; padding: 16px 18px;
+  border: 1px solid var(--line); border-radius: var(--r);
+  background: var(--surface-2);
+}
+.closeout.on { background: var(--ok-bg); border-color: var(--ok-line); }
+.closeout .co-text { flex: 1 1 320px; min-width: 0; }
+.closeout .co-text strong { display: block; font-size: 14px; }
+.closeout.on .co-text strong { color: var(--ok); }
+.closeout .co-text p { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-2); max-width: 66ch; }
+.closeout .btn { flex: 0 0 auto; }
 
 /* -------------------------------------------------------- project detail -- */
 .detail-head, .group, .detail-state { max-width: 1000px; }
@@ -840,6 +876,7 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
   .rowcard.t-ID { --edge: var(--id); }
   .rowcard.t-IR { --edge: var(--ir); }
   .rowcard.late { background: var(--late-bg); border-color: var(--late-line); --edge: var(--late); }
+  .rowcard.finished { background: var(--ok-bg); border-color: var(--ok-line); --edge: var(--ok); }
   .rowcard .line1 { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
   .rowcard .line1 .pname { flex: 1 1 auto; }
   .rowcard .line1 .days { flex: 0 0 auto; text-align: right; }
@@ -961,6 +998,13 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
 /* "On plan" is only said where something exists to be on plan against; a row
    with no plan, target or deadline says nothing at all. */
 .onplan { color: var(--ok); font-size: 13px; font-weight: 550; }
+
+/* "Completed", wherever a finished project is named: the board's overdue cell,
+   the stacked card, the project header. Always the word, never the tick alone. */
+.finished {
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  color: var(--ok); font-size: 12.5px; font-weight: 600;
+}
 
 /* ------------------------------------------------------------- the team --- */
 /* The studio roster panel. Adding a colleague is a two-field act and lives at

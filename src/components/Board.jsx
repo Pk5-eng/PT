@@ -1,4 +1,4 @@
-import { lateness, idleReason, deliveryIn } from '../lib/board.js';
+import { lateness, idleReason, deliveryIn, isCompleted } from '../lib/board.js';
 import { toProject } from '../lib/route.js';
 import { shortDate, dueWording, projectStatusLabel } from '../lib/format.js';
 import { Alert, Users, ArrowDown, ArrowUp, Dashed, Check, Clock, Calendar } from './Icons.jsx';
@@ -21,6 +21,14 @@ import { Alert, Users, ArrowDown, ArrowUp, Dashed, Check, Clock, Calendar } from
  * with an uncoloured cell. Those rows say nothing, because nothing is known.
  */
 function Late({ row }) {
+  // A finished project has no overrun to report, and its stages were left where
+  // they stood, so the figure this cell would otherwise show is the stale
+  // overrun of work that shipped. It says what actually happened instead - in a
+  // word, because the green is decoration and the word is the status.
+  if (isCompleted(row)) {
+    return <span className="finished"><Check size={12} />Completed</span>;
+  }
+
   const late = lateness(row);
   // A project with nothing in process has no overrun to report, and this cell
   // was the "—" that said so twice over. It says which silence it is instead:
@@ -53,6 +61,12 @@ function Late({ row }) {
 function Delivery({ row }) {
   const left = deliveryIn(row);
   if (!row.target_delivery) return <span className="none">—</span>;
+  // The date a finished project was due is history, not a countdown. Kept on
+  // screen, because it is a fact about the job; stripped of the urgency, because
+  // "40 days over" in red on a project that is done is simply not true.
+  if (isCompleted(row)) {
+    return <div className="delivery"><span className="date">{shortDate(row.target_delivery)}</span></div>;
+  }
   const over = left != null && left < 0;
   const near = left != null && left >= 0 && left <= 12;
   return (
@@ -141,7 +155,8 @@ export default function Board({ rows, teams, sort, setSort }) {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} className={`clickable t-${r.type}${lateness(r).late ? ' late' : ''}`}
+              <tr key={r.id}
+                  className={`clickable t-${r.type}${lateness(r).late ? ' late' : ''}${isCompleted(r) ? ' finished' : ''}`}
                   tabIndex={0} onClick={() => open(r.id)} onKeyDown={(e) => onKey(e, r.id)}>
                 <td>
                   {/* Clamped to two lines in a fixed-height row, so the full
@@ -167,11 +182,12 @@ export default function Board({ rows, teams, sort, setSort }) {
       <div className="rowcards">
         {rows.map((r) => {
           const late = lateness(r);
+          const finished = isCompleted(r);
           const team = teams[r.id] ?? [];
           const working = team.filter((t) => t.role !== 'INVOLVED');
           const left = deliveryIn(r);
           return (
-            <div key={r.id} className={`rowcard t-${r.type}${late.late ? ' late' : ''}`}
+            <div key={r.id} className={`rowcard t-${r.type}${late.late ? ' late' : ''}${finished ? ' finished' : ''}`}
                  role="button" tabIndex={0}
                  onClick={() => open(r.id)} onKeyDown={(e) => onKey(e, r.id)}>
               <div className="line1">
@@ -181,9 +197,16 @@ export default function Board({ rows, teams, sort, setSort }) {
                     <span className="big">{late.days}</span><span className="plan"> days</span>
                   </span>
                 )}
+                {finished && <span className="finished"><Check size={12} />Completed</span>}
               </div>
+              {/* There is a line to spare here, so the card still names the
+                  substage the table dropped - but not on a finished project,
+                  where the name is whatever was last in process and says
+                  nothing true about where the job stands. */}
               <div className="line2">
-                {r.substage_name ? (
+                {finished ? (
+                  <span className="none">Finished. Its stages are left as they stood.</span>
+                ) : r.substage_name ? (
                   <>
                     {r.substage_name}
                     {r.active_substage_count > 1 && <span className="more">+{r.active_substage_count - 1} more</span>}
@@ -197,8 +220,9 @@ export default function Board({ rows, teams, sort, setSort }) {
                 <span className={`tag tag-${r.type}`}>{r.type}</span>
                 {late.late && <span className="why"><Alert size={11} />{late.days} days {late.basis}</span>}
                 {r.target_delivery && (
-                  <span className={left != null && left < 0 ? 'overdue' : undefined}>
-                    <Calendar size={12} /> {shortDate(r.target_delivery)} · {dueWording(left)}
+                  <span className={!finished && left != null && left < 0 ? 'overdue' : undefined}>
+                    <Calendar size={12} /> {shortDate(r.target_delivery)}
+                    {!finished && ` · ${dueWording(left)}`}
                   </span>
                 )}
                 {working.length > 0 && <span><Users size={12} /> {working.map((t) => t.name).join(', ')}</span>}

@@ -3,7 +3,7 @@
 // top, and a wrong idle reason tells the studio it has no data when it does.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { lateness, idleReason, summarise, sortRows, matches, planDays, deliverySoon }
+import { lateness, idleReason, summarise, sortRows, matches, planDays, deliverySoon, FOCUS }
   from '../../src/lib/board.js';
 
 const row = (o) => ({
@@ -77,4 +77,66 @@ test('search matches a project, a stage or a colleague, and needs every word', (
   assert.equal(matches(r, 'ashok madhu', team), true);
   assert.equal(matches(r, 'ashok selva', team), false);
   assert.equal(matches(r, '', team), true);
+});
+
+/* ---------------------------------------------------------- completed ---- */
+/* A project the studio has closed. Every one of these is a claim the board
+   makes on screen the moment somebody presses "Project completed", and they
+   have to agree with each other: a card counting a finished project that its
+   own filter then refuses to show is the kind of quiet disagreement that stops
+   a number being trusted. */
+
+const done = (o = {}) => row({ status: 'completed', ...o });
+
+test('a completed project is never late, whatever its stages still say', () => {
+  // Its substages are left exactly where they stood, so the raw overrun is
+  // still in the row. It is history, not an overrun anybody can act on.
+  assert.deepEqual(lateness(done({ days_over: 90, days_past_target: 40, days_past_section: 12 })),
+    { days: null, basis: null, late: false });
+});
+
+test('a completed project is never delivering soon, and never overdue for it', () => {
+  assert.equal(deliverySoon(done({ days_to_delivery: 3 })), false);
+  assert.equal(deliverySoon(done({ days_to_delivery: -200 })), false);
+});
+
+test('none of the four board numbers counts a completed project', () => {
+  const t = summarise([
+    done({ days_over: 90, days_to_delivery: 2, started_count: 0 }),
+    row({ days_over: 3 }),
+  ]);
+  assert.deepEqual(t, { live: 1, late: 1, soon: 0, idle: 0 });
+});
+
+test('every card filter shows exactly the rows its number counted', () => {
+  const rows = [
+    done({ id: 'f', days_over: 90, days_to_delivery: 2, started_count: 0 }),
+    row({ id: 'l', days_over: 3 }),
+    row({ id: 'i', started_count: 0 }),
+  ];
+  const t = summarise(rows);
+  for (const key of ['live', 'late', 'soon', 'idle']) {
+    assert.equal(rows.filter(FOCUS[key]).length, t[key], `${key} card and filter disagree`);
+  }
+  assert.equal(rows.filter(FOCUS.late).map((r) => r.id).includes('f'), false);
+});
+
+test('completed projects sink to the bottom of every order, and none is dropped', () => {
+  const rows = [
+    done({ id: 'f1', name: 'Aardvark', days_over: 99, days_to_delivery: 1, substage_name: 'X',
+           stage_group_name: 'A GROUP' }),
+    row({ id: 'a', name: 'Zebra', days_over: 4, days_to_delivery: 30,
+          substage_name: 'Y', stage_group_name: 'B GROUP' }),
+    done({ id: 'f2', name: 'Beetle' }),
+    row({ id: 'b', name: 'Yak', substage_name: null, started_count: 0 }),
+  ];
+  for (const key of ['overrun', 'name', 'delivery', 'stage']) {
+    const out = sortRows(rows, key);
+    assert.equal(out.length, rows.length, `${key} dropped a row`);
+    assert.deepEqual(out.slice(2).map((r) => r.id).sort(), ['f1', 'f2'],
+      `${key} did not sink the completed projects`);
+  }
+  // And they are still ordered among themselves, not left in input order.
+  assert.deepEqual(sortRows(rows, 'name').map((r) => r.name),
+    ['Yak', 'Zebra', 'Aardvark', 'Beetle']);
 });
