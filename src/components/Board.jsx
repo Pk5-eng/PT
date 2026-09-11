@@ -26,7 +26,7 @@ function Late({ row }) {
   // overrun of work that shipped. It says what actually happened instead - in a
   // word, because the green is decoration and the word is the status.
   if (isCompleted(row)) {
-    return <span className="finished"><Check size={12} />Completed</span>;
+    return <span className="donemark"><Check size={12} />Completed</span>;
   }
 
   const late = lateness(row);
@@ -197,7 +197,7 @@ export default function Board({ rows, teams, sort, setSort }) {
                     <span className="big">{late.days}</span><span className="plan"> days</span>
                   </span>
                 )}
-                {finished && <span className="finished"><Check size={12} />Completed</span>}
+                {finished && <span className="donemark"><Check size={12} />Completed</span>}
               </div>
               {/* There is a line to spare here, so the card still names the
                   substage the table dropped - but not on a finished project,

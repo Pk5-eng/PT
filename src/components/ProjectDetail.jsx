@@ -459,7 +459,7 @@ export default function ProjectDetail({ projectId, onBack }) {
             {project.code && <span>{project.code}</span>}
             {project.client_name && <span>{project.client_name}</span>}
             {finished
-              ? <span className="finished"><Check size={12} />Completed</span>
+              ? <span className="donemark"><Check size={12} />Completed</span>
               : <span>{projectStatusLabel(project.status)}</span>}
             {project.priority != null && <span>priority {project.priority}</span>}
             {project.site_location && <span>{project.site_location}</span>}
