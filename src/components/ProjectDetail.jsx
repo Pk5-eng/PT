@@ -8,6 +8,8 @@ import { workingDays, todayISO } from '../lib/workdays.js';
 import { isCompleted } from '../lib/board.js';
 import { daysSpent } from '../lib/analytics.js';
 import ProjectPanel from './ProjectPanel.jsx';
+import Timeline from './Timeline.jsx';
+import { timelineSteps } from '../lib/timeline.js';
 import SchemaNotice from './SchemaNotice.jsx';
 import { isSchemaBehind } from '../lib/schema.js';
 import { optimistic, useRefreshOnReturn } from '../lib/live.js';
@@ -410,6 +412,19 @@ export default function ProjectDetail({ projectId, onBack }) {
     return out;
   }, [rows]);
 
+  const steps = useMemo(() => timelineSteps(
+    groups,
+    Object.fromEntries(Object.entries(deadlines).map(([k, v]) => [k, v?.target_date ?? null])),
+  ), [groups, deadlines]);
+
+  /** A timeline step opens its section and brings it into view. */
+  const goToSection = useCallback((gid) => {
+    setCollapsed((c) => ({ ...c, [gid]: false }));
+    requestAnimationFrame(() => {
+      document.getElementById(`sec-${gid}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, []);
+
   const spent = useMemo(() => daysSpent(rows.map((r) => ({
     started_on: r.started_on, concluded_on: r.concluded_on,
   }))), [rows]);
@@ -486,6 +501,14 @@ export default function ProjectDetail({ projectId, onBack }) {
           </div>
         </header>
 
+        <Timeline
+          steps={steps}
+          delivery={project.target_delivery}
+          deliveryIn={deliveryIn}
+          completed={finished}
+          onPick={goToSection}
+        />
+
         {behind && (
           <SchemaNotice what="Section deadlines are switched off until it is applied — the table that holds them does not exist yet." />
         )}
@@ -507,7 +530,7 @@ export default function ProjectDetail({ projectId, onBack }) {
           const done = g.rows.filter((r) => r.status === 'done').length;
           const deadline = deadlines[g.id]?.target_date ?? null;
           return (
-            <section key={g.id} className={`group sec sec-${Math.min(g.seq, 6) + 1}${inScope.length === 0 ? ' offscope' : ''}`}>
+            <section key={g.id} id={`sec-${g.id}`} className={`group sec sec-${Math.min(g.seq, 6) + 1}${inScope.length === 0 ? ' offscope' : ''}`}>
               <h2>
                 <button onClick={() => setCollapsed((c) => ({ ...c, [g.id]: !shut }))}
                         aria-expanded={!shut}>

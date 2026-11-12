@@ -502,6 +502,114 @@ button.card:hover { border-color: #d8d1c4; box-shadow: var(--shadow-md); transfo
 .hs strong { color: var(--ink); font-weight: 600; }
 .hs.over, .hs.over strong, .hs.over svg { color: var(--late); }
 
+/* -------------------------------------------------------------- timeline -- */
+/* One step per section, evenly spaced: a sequence, not a time axis. Every
+ * step carries its status as a word; the node and the rule only repeat it. */
+.timeline {
+  max-width: 1000px; margin: -8px 0 26px; padding: 16px 18px 14px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); box-shadow: var(--shadow);
+}
+.tl-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.tl-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--ink);
+}
+.tl-note { font-size: 11.5px; color: var(--ink-3); }
+
+.tl-track {
+  --node: 26px; --rail: 3px;
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+}
+.tl-step { position: relative; min-width: 0; }
+
+/* The rail: each step draws the half before its node (coloured by the step
+   before it) and the half after (coloured by itself). */
+.tl-step::before, .tl-step::after {
+  content: ""; position: absolute; top: calc(6px + var(--node) / 2 - var(--rail) / 2);
+  height: var(--rail); background: var(--line); z-index: 0;
+}
+.tl-step::before { left: 0; right: 50%; }
+.tl-step::after  { left: 50%; right: 0; }
+.tl-step.from-start::before { display: none; }
+.tl-end::after { display: none; }
+.tl-step.from-done::before, .tl-step.ph-done::after { background: var(--ok); }
+.tl-step.from-in_process::before, .tl-step.from-partly_done::before { background: var(--work-line); }
+.tl-step.ph-in_process::after, .tl-step.ph-partly_done::after {
+  background: linear-gradient(90deg, var(--work), var(--line));
+}
+
+.tl-step > button, .tl-static {
+  position: relative; z-index: 1; width: 100%;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;
+  padding: 6px 4px 8px; border: 0; background: none; font: inherit; color: inherit;
+  border-radius: var(--r-sm);
+}
+.tl-step > button { cursor: pointer; transition: background .13s var(--ease); }
+.tl-step > button:hover { background: var(--surface-2); }
+.tl-step > button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+.tl-node {
+  width: var(--node); height: var(--node); border-radius: 50%; flex: 0 0 auto;
+  display: grid; place-items: center;
+  font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+  background: var(--surface); color: var(--ink-3); border: 2px solid var(--line);
+  transition: transform .13s var(--ease);
+}
+.tl-step > button:hover .tl-node { transform: scale(1.08); }
+.ph-done .tl-node { background: var(--ok); border-color: var(--ok); color: #fff; }
+.ph-in_process .tl-node {
+  background: var(--work-bg); border-color: var(--work); color: var(--work);
+  box-shadow: 0 0 0 4px var(--work-bg);
+  animation: tl-pulse 2.4s ease-in-out infinite;
+}
+.ph-partly_done .tl-node { background: var(--work-bg); border-color: var(--work-line); color: var(--work); }
+.ph-hold .tl-node { background: var(--hold-bg); border-color: var(--hold); color: var(--hold); }
+.ph-not_in_scope .tl-node { border-style: dashed; opacity: .6; }
+.tl-step.late .tl-node { border-color: var(--late); color: var(--late); background: var(--late-bg); }
+.tl-end .tl-node { border-color: var(--ink-3); color: var(--ink-2); }
+.tl-end.ph-done .tl-node { border-color: var(--ok); color: #fff; }
+
+@keyframes tl-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--work-bg); }
+  50%      { box-shadow: 0 0 0 7px var(--work-bg); }
+}
+
+.tl-text { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; max-width: 100%; }
+.tl-name {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ink); line-height: 1.3;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  min-height: calc(2 * 1.3em);
+}
+.ph-not_in_scope .tl-name { color: var(--ink-3); }
+.tl-state { font-size: 11.5px; font-weight: 600; color: var(--ink-2); }
+.ph-done .tl-state { color: var(--ok); }
+.ph-in_process .tl-state, .ph-partly_done .tl-state { color: var(--work); }
+.ph-hold .tl-state { color: var(--hold); }
+.ph-not_in_scope .tl-state, .ph-not_started .tl-state { color: var(--ink-3); }
+.tl-count { font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tl-date { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.tl-date.late { color: var(--late); font-weight: 600; }
+
+/* Eight steps do not fit side by side on a phone: the strip turns on its side. */
+@media (max-width: 720px) {
+  .timeline { margin-top: -10px; padding: 14px 12px 8px; }
+  .tl-track { grid-auto-flow: row; grid-auto-columns: auto; }
+  .tl-step::before, .tl-step::after {
+    left: calc(4px + var(--node) / 2 - var(--rail) / 2); right: auto;
+    width: var(--rail); height: auto;
+  }
+  .tl-step::before { top: 0; bottom: 50%; }
+  .tl-step::after  { top: 50%; bottom: 0; }
+  .tl-step.ph-in_process::after, .tl-step.ph-partly_done::after {
+    background: linear-gradient(180deg, var(--work), var(--line));
+  }
+  .tl-step > button, .tl-static { flex-direction: row; align-items: center; text-align: left; gap: 12px; padding: 6px 4px; }
+  .tl-text { align-items: flex-start; flex-direction: row; flex-wrap: wrap; gap: 2px 8px; }
+  .tl-name { min-height: 0; flex: 1 1 100%; }
+}
+
 .group { margin-bottom: 26px; }
 .group > h2 {
   display: flex; align-items: center; gap: 10px; width: 100%;

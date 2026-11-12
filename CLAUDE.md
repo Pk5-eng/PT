@@ -141,6 +141,12 @@ between other tasks, not people who will learn a tool.
   "Overdue by" cell, which held a dash on exactly those rows. Below 820px the stacked cards
   still name it, and count the rest as "+N more", because there is a line to spare there.
   The project screen is where the substages actually live.
+- **The project timeline is a sequence, not a schedule.** The strip under the project
+  heading (`src/components/Timeline.jsx`, derived in `src/lib/timeline.js`) shows one evenly
+  spaced step per section, then delivery. Each step states its status in words, its substage
+  count, and only a recorded date or a typed section deadline. It is deliberately not drawn to
+  a time scale: that would make it the Gantt chart this product rules out, drawn mostly from
+  start dates that were never recorded.
 - **Every board row is the same height, and every column the same width.** Declared widths on a
   fixed table layout, one row height, and content clamped to two lines with the full text in the
   cell's title. A table that sizes itself from its contents lets one long project name set the
