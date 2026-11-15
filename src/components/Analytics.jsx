@@ -7,7 +7,9 @@ import SchemaNotice from './SchemaNotice.jsx';
 import {
   deadlineItems, overdue, dueWithin, dateCoverage, teamLoad, headline,
 } from '../lib/analytics.js';
-import { isCompleted } from '../lib/board.js';
+import { isCompleted, deliveryIn } from '../lib/board.js';
+import { masterTimeline, masterBands } from '../lib/timeline.js';
+import MasterTimeline, { MasterKey } from './MasterTimeline.jsx';
 import { Alert, ArrowLeft, Calendar, Users, Dashed, Check } from './Icons.jsx';
 
 /**
@@ -81,9 +83,9 @@ export default function Analytics({ onBack }) {
       supabase.from('v_board').select('*'),
       supabase
         .from('project_substage')
-        .select('id, project_id, status, target_date, substages(name, stage_groups(name, seq))'),
+        .select('id, project_id, status, target_date, started_on, concluded_on, substages(name, stage_groups(id, name, seq))'),
       supabase.from('assignments').select('project_id, person_id, role_code, people(id, name)'),
-      supabase.from('project_stage_group').select('id, project_id, target_date, stage_groups(name, seq)'),
+      supabase.from('project_stage_group').select('id, project_id, stage_group_id, target_date, stage_groups(name, seq)'),
       myId ? supabase.from('people').select('id, name').eq('id', myId).single() : { data: null },
     ]);
 
@@ -101,7 +103,10 @@ export default function Analytics({ onBack }) {
       project: projectName[r.project_id] ?? '—',
       status: r.status,
       target_date: r.target_date,
+      started_on: r.started_on,
+      concluded_on: r.concluded_on,
       substage: r.substages?.name ?? null,
+      group_id: r.substages?.stage_groups?.id ?? null,
       section: r.substages?.stage_groups?.name ?? null,
       section_seq: r.substages?.stage_groups?.seq ?? 99,
     })));
@@ -110,6 +115,7 @@ export default function Analytics({ onBack }) {
       project_id: r.project_id,
       project: projectName[r.project_id] ?? '—',
       section: r.stage_groups?.name ?? 'Section',
+      group_id: r.stage_group_id,
       target_date: r.target_date,
     })));
 
@@ -168,8 +174,19 @@ export default function Analytics({ onBack }) {
     const items = deadlineItems({ projects: keep, sections: mySections, stages });
     const coverage = dateCoverage(stages, order);
 
+    // The master timeline. Built from the same scoped rows as everything else
+    // on this screen, so the filters move it with the other three figures.
+    const timeline = masterBands(masterTimeline({
+      projects: keep,
+      stages: myStages.filter((s) => s.group_id).map((s) => ({
+        ...s, group: s.section, group_seq: s.section_seq,
+      })),
+      sections: mySections,
+    }));
+
     return {
       rows: keep,
+      timeline,
       items,
       late: overdue(items),
       soon: dueWithin(items, SOON),
@@ -249,6 +266,33 @@ export default function Analytics({ onBack }) {
       </div>
 
       <div className="figs one">
+        {/* -------------------------------------------- 0. the master timeline */}
+        <Figure
+          title={mine ? `Where ${person}'s projects stand` : 'Where every project stands'}
+          claim="Each row is one live project, read left to right from its first section to delivery. Each column is a section, and its header counts what is in it right now. Columns are evenly spaced: this is the order the work happens in, not a calendar. Projects furthest along sit at the top of each discipline; click any row to open it."
+          columns={['Project', 'Discipline', 'In process now', 'Past a section deadline', 'Delivery']}
+          rows={model.timeline.flatMap((band) => band.rows.map((r) => {
+            const p = model.rows.find((x) => x.id === r.id);
+            const now = r.steps.filter((st) => st.state === 'in_process' || st.state === 'hold');
+            return [
+              r.name,
+              band.type || '—',
+              now.map((st) => `${st.name}${st.state === 'hold' ? ' (on hold)' : ''}`).join('; ') || '—',
+              r.steps.filter((st) => st.over).map((st) => `${st.name}, ${st.over} days`).join('; ') || '—',
+              p?.target_delivery ? `${shortDate(p.target_delivery)} (${dueWording(deliveryIn(p))})` : 'No date set',
+            ];
+          }))}
+          empty={model.rows.length === 0 ? 'No projects in view.' : 'None of these projects has any sections set up yet.'}
+        >
+          <MasterKey />
+          <MasterTimeline bands={model.timeline} projects={model.rows} />
+          <p className="figfoot">
+            <Calendar size={12} />
+            The only dates shown are ones the app recorded when a status changed, or deadlines
+            somebody typed. A red edge on a row means a section or the delivery date has passed.
+          </p>
+        </Figure>
+
         {/* ------------------------------------------------- 1. the snapshot */}
         <Figure
           title={mine ? `${person}'s deadlines` : 'Deadlines across the studio'}

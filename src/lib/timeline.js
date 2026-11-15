@@ -88,3 +88,104 @@ export function timelineSteps(groups, deadlines = {}, today = todayISO()) {
     };
   });
 }
+
+/**
+ * The master timeline on the numbers screen: every project in view, one row
+ * each, against the same columns - every section in studio order.
+ *
+ * It is the project screen's strip stacked, and it obeys the same rules: one
+ * evenly spaced column per section, not a time axis, and no date on it that a
+ * person did not type or the trigger did not stamp. Read across, a row says
+ * where one project is; read down, a column says what the studio has in that
+ * section right now.
+ *
+ * projects: v_board rows   ({ id, name, type, target_delivery, ... })
+ * stages:   [{ project_id, group_id, group, group_seq, status, started_on, concluded_on }]
+ * sections: [{ project_id, group_id, target_date }]
+ *
+ * A project with no substages at all in a section gets 'untracked', not 'not in
+ * scope': nobody decided that section was out, it was simply never set up, and
+ * those are different statements (CLAUDE.md, "show the gaps").
+ *
+ * Rows come back in sequence order - the project furthest through the job
+ * first - so the grid reads as a staircase and the eye finds a project by where
+ * it is rather than by searching a name. A project nothing has started on sinks
+ * to the bottom; it is still there.
+ */
+export function masterTimeline({ projects = [], stages = [], sections = [] }, today = todayISO()) {
+  const columns = [...new Map(stages.map((s) => [s.group_id, { id: s.group_id, name: s.group, seq: s.group_seq }])).values()]
+    .sort((a, b) => a.seq - b.seq || a.name.localeCompare(b.name));
+
+  const rowsOf = new Map();
+  for (const s of stages) {
+    const k = `${s.project_id}::${s.group_id}`;
+    if (!rowsOf.has(k)) rowsOf.set(k, []);
+    rowsOf.get(k).push(s);
+  }
+  const deadlineOf = new Map(sections.map((s) => [`${s.project_id}::${s.group_id}`, s.target_date ?? null]));
+
+  const rows = projects.map((p) => {
+    const groups = columns.map((c) => ({ id: c.id, name: c.name, rows: rowsOf.get(`${p.id}::${c.id}`) ?? [] }));
+    const deadlines = Object.fromEntries(columns.map((c) => [c.id, deadlineOf.get(`${p.id}::${c.id}`) ?? null]));
+    const steps = timelineSteps(groups, deadlines, today).map((st, i) => (
+      groups[i].rows.length === 0 ? { ...st, state: 'untracked', label: 'No stages', deadline: null, over: null } : st
+    ));
+
+    // How far through the job: the last section anything has happened in.
+    let reach = -1;
+    steps.forEach((st, i) => {
+      if (st.state !== 'not_started' && st.state !== 'not_in_scope' && st.state !== 'untracked') reach = i;
+    });
+    return {
+      id: p.id, name: p.name, type: p.type, status: p.status,
+      steps, reach,
+      late: steps.some((st) => st.over),
+    };
+  }).sort((a, b) => b.reach - a.reach || a.name.localeCompare(b.name));
+
+  return { columns, rows };
+}
+
+const QUIET = new Set(['not_in_scope', 'untracked']);
+const DISCIPLINE = { AR: 'Architecture', ID: 'Interior design', IR: 'Interior renovation' };
+
+/**
+ * The master timeline split into one band per discipline.
+ *
+ * An AR project and an ID project do not share sections: each gets the other
+ * discipline's sections out of scope. One grid for both was half "Not in
+ * scope" cells, which is noise a reader has to look through to find the work.
+ * So each band keeps only the columns where at least one of its own projects
+ * has something in scope - read off the data, never off a rule about which
+ * type gets which section (that rule lives in ensure_project_structure() and
+ * nowhere else). A section an AR project unusually has interiors in still
+ * shows up in the AR band, because the data says so.
+ *
+ * Each column carries what its band holds, so its header can say "3 in
+ * process" and nobody has to count a column by eye.
+ */
+export function masterBands({ columns, rows }) {
+  const types = [...new Set(rows.map((r) => r.type ?? ''))]
+    .sort((a, b) => (Object.keys(DISCIPLINE).indexOf(a) + 1 || 99) - (Object.keys(DISCIPLINE).indexOf(b) + 1 || 99));
+
+  return types.map((type) => {
+    const mine = rows.filter((r) => (r.type ?? '') === type);
+    const keep = columns
+      .map((c, i) => ({ c, i }))
+      .filter(({ i }) => mine.some((r) => !QUIET.has(r.steps[i].state)));
+    const n = (i, state) => mine.filter((r) => r.steps[i].state === state).length;
+    return {
+      type,
+      label: DISCIPLINE[type] ?? 'No discipline set',
+      columns: keep.map(({ c, i }) => ({
+        ...c,
+        in_process: n(i, 'in_process'),
+        hold: n(i, 'hold'),
+        partly_done: n(i, 'partly_done'),
+        done: n(i, 'done'),
+        late: mine.filter((r) => r.steps[i].over).length,
+      })),
+      rows: mine.map((r) => ({ ...r, steps: keep.map(({ i }) => r.steps[i]) })),
+    };
+  });
+}

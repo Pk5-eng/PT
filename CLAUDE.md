@@ -124,8 +124,17 @@ between other tasks, not people who will learn a tool.
 - **The numbers screen answers exactly three questions**, and the studio chose them: what is
   coming at me and what have I already missed; what work is nobody scheduling; who is carrying
   how much. Its person filter defaults to whoever is signed in, which is what makes the first
-  one personal. Do not add a fourth figure without being asked — the screen was six figures
+  one personal. Do not add another figure without being asked — the screen was six figures
   once and was cut back on purpose.
+- **The master timeline heads the numbers screen**, added at the owner's request
+  (`src/components/MasterTimeline.jsx`, derived by `masterTimeline()` and `masterBands()` in
+  `src/lib/timeline.js`). It is the project screen's sequence strip stacked: one row per live
+  project, one evenly spaced column per section, then delivery, so it obeys every rule that strip
+  does - not to scale, not a Gantt chart, status in words in every cell, only recorded or typed
+  dates. It is split into one band per discipline because each discipline's other sections are
+  out of scope, and a band's columns are read off the data, never off a rule about which type
+  gets which section. It answers "where is everything", which is not a fourth question so much
+  as the map the other three sit on.
 - **Nothing on that screen is inferred.** A stage with no date does not borrow its section's,
   and a section does not borrow the project's delivery date. The second figure exists to count
   those absences, and it would be measuring its own guesses if the first had filled them in.

@@ -39,3 +39,46 @@ test('a deadline is late in working days, and never on a finished section', () =
   assert.equal(done.over, null);
   assert.equal(none.deadline, null, 'no section borrows a deadline it does not have');
 });
+
+import { masterTimeline, masterBands } from '../../src/lib/timeline.js';
+
+test('the master timeline gives every project every section, in studio order', () => {
+  const st = (project_id, group_id, seq, status, o = {}) => ({
+    project_id, group_id, group: group_id.toUpperCase(), group_seq: seq, status,
+    started_on: null, concluded_on: null, ...o,
+  });
+  const { columns, rows } = masterTimeline({
+    projects: [{ id: 'p1', name: 'Alpha' }, { id: 'p2', name: 'Beta' }, { id: 'p3', name: 'Gamma' }],
+    stages: [
+      st('p1', 'b', 2, 'not_started'), st('p1', 'a', 1, 'in_process'),
+      st('p2', 'a', 1, 'done'), st('p2', 'b', 2, 'in_process'),
+      st('p3', 'a', 1, 'not_started'),
+    ],
+    sections: [{ project_id: 'p1', group_id: 'a', target_date: '2026-11-09' }],
+  }, '2026-11-12');
+
+  assert.deepEqual(columns.map((c) => c.id), ['a', 'b'], 'ordered by section seq, not arrival');
+  assert.deepEqual(rows.map((r) => r.name), ['Beta', 'Alpha', 'Gamma'], 'furthest through the job first');
+  assert.equal(rows[1].steps[0].over, 3, 'section deadline overrun in working days');
+  assert.equal(rows[1].late, true);
+  assert.equal(rows[2].steps[1].state, 'untracked', 'a section never set up is not called out of scope');
+  assert.equal(rows[2].steps[1].deadline, null);
+});
+
+test('each discipline band keeps only the sections its own projects have in scope', () => {
+  const st = (project_id, group_id, seq, status) => ({
+    project_id, group_id, group: group_id, group_seq: seq, status, started_on: null, concluded_on: null,
+  });
+  const bands = masterBands(masterTimeline({
+    projects: [{ id: 'i', name: 'Interior', type: 'ID' }, { id: 'a', name: 'Arch', type: 'AR' }],
+    stages: [
+      st('a', 'concept', 1, 'in_process'), st('a', 'gfc-id', 2, 'not_in_scope'),
+      st('i', 'concept', 1, 'not_in_scope'), st('i', 'gfc-id', 2, 'not_started'),
+    ],
+  }, '2026-11-12'));
+  assert.deepEqual(bands.map((b) => b.type), ['AR', 'ID'], 'AR, ID, IR order regardless of arrival');
+  assert.deepEqual(bands[0].columns.map((c) => c.id), ['concept']);
+  assert.deepEqual(bands[1].columns.map((c) => c.id), ['gfc-id'], 'not-started still counts as in scope');
+  assert.equal(bands[0].columns[0].in_process, 1);
+  assert.equal(bands[0].rows[0].steps.length, 1);
+});
